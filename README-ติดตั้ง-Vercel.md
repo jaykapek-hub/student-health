@@ -54,11 +54,22 @@
 
 - ข้อมูลยังเก็บใน Google Sheets เดิม ไม่ได้ย้ายไป Vercel Database
 - ครูและผู้อำนวยการเข้าใช้งานผ่าน Vercel ด้วย Username/PIN ได้
-- ปุ่มเข้าสู่ระบบ Admin แบบ Google Account ใช้ไม่ได้จากหน้า Vercel เพราะ `Session.getActiveUser()` ของ Apps Script ไม่สามารถระบุตัวผู้ใช้ที่เปิดหน้า Vercel ได้
-- การสร้าง/แก้ไข/ปลดล็อกบัญชีผู้ใช้ Admin ให้ใช้หน้า Web App เดิมของ Google Apps Script (Deployment เดิมที่ตั้ง Execute as: User accessing the web app ตามการตั้งค่าที่ระบบเดิมต้องใช้) โดยเปิดด้วยบัญชี Google Admin ตามระบบเดิม
-- ต้องเก็บ Deployment เดิมสำหรับหน้า Admin ไว้ และสร้าง Deployment ใหม่แบบ Execute as: Me สำหรับ Vercel แยกกัน ทั้งสอง Deployment ใช้ Apps Script project และ Google Sheet ชุดเดียวกัน
-- หน้า Vercel จะไม่แสดงปุ่ม Admin โดยอัตโนมัติ เนื่องจาก Backend จะรายงานว่าไม่มี Google Admin session
+- Admin เข้าใช้งานจาก Vercel ได้ด้วย Username + Password แยกจากบัญชีครู/ผู้อำนวยการ (ครูยังใช้ PIN 6 หลักเหมือนเดิม)
+- ก่อนใช้ Admin ครั้งแรก ให้เปิด Google Sheet ต้นฉบับ แล้วเลือกเมนู **ระบบบันทึกสุขภาพ > ตั้ง Username / Password สำหรับ Admin (ใช้บน Vercel)** เมนูนี้อนุญาตเฉพาะ Google Admin ที่ตั้งไว้เดิมเท่านั้น
+- ถ้ายังไม่เคยตั้งค่าความปลอดภัย ให้เลือก **1) ตั้งค่าความปลอดภัย / ผู้ดูแลระบบ (ทำครั้งแรก)** ก่อน แล้วจึงตั้ง Username / Password ของ Admin
+- Password ของ Admin จะถูกเก็บเป็นค่าแฮชใน Script Properties ไม่ได้เก็บเป็นข้อความปกติ การเปลี่ยน Password จะทำให้ Session Admin เดิมหมดอายุ
+- ยังควรเก็บ Deployment เดิมของ Google Apps Script ไว้สำหรับจัดการโครงการ/ชีตและเมนูผู้ดูแลระบบ ทั้ง Deployment เดิมและ Deployment สำหรับ Vercel ใช้ Apps Script project และ Google Sheet ชุดเดียวกัน
 - หากต้องการย้าย Backend ออกจาก Apps Script ทั้งหมดในอนาคต ต้องพัฒนาระบบใหม่ เช่น Vercel Functions + PostgreSQL/Supabase และย้ายข้อมูล/ระบบสิทธิ์อย่างเป็นขั้นตอน
+
+## ตั้งค่าบัญชี Admin ก่อนเข้า Vercel ครั้งแรก
+
+1. เปิด Google Sheet ที่ผูกกับ Apps Script และเปิดเมนู **ระบบบันทึกสุขภาพ**
+2. หากยังไม่เคยตั้งระบบ ให้กด **1) ตั้งค่าความปลอดภัย / ผู้ดูแลระบบ (ทำครั้งแรก)** และทำตามหน้าต่างที่แสดง
+3. กด **ตั้ง Username / Password สำหรับ Admin (ใช้บน Vercel)**
+4. ตั้ง Username 3-30 ตัวอักษร และ Password อย่างน้อย 10 ตัวอักษร จากนั้นยืนยัน Password
+5. กลับไปหน้า Vercel แล้วเข้าสู่ระบบในส่วน **ผู้ดูแลระบบ (Admin)** ด้วยข้อมูลที่ตั้งไว้
+
+อย่าใช้ Password ซ้ำกับอีเมลหรือบัญชีสำคัญอื่น และอย่าส่ง Password ผ่านกลุ่มแชต
 
 ## ตรวจสอบเมื่อ Deploy แล้วมีปัญหา
 

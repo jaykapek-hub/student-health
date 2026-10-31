@@ -5,7 +5,7 @@
  * - นำเข้ารายชื่อจาก CSV/Excel/วางจาก Excel
  * - ตั้งค่าโรงเรียน/ครู/ผอ. ได้จากหน้า "ตั้งค่า" ในแอป
  * - (เวอร์ชัน 3) ระบบหลายผู้ใช้: เข้าสู่ระบบด้วย Username + PIN 6 หลัก, สิทธิ์รายห้อง,
- *   ผู้ดูแลระบบ (Admin) ยืนยันด้วยอีเมล Google, ผู้อำนวยการดูได้อย่างเดียว
+ *   ผู้ดูแลระบบ (Admin) ยืนยันด้วย Username + Password, ผู้อำนวยการดูได้อย่างเดียว
  *
  * ชีตที่ระบบใช้ (สร้างให้อัตโนมัติเมื่อเปิดแอปครั้งแรก):
  *   ตั้งค่า, รายชื่อนักเรียน, วันหยุดนักขัตฤกษ์, เกณฑ์โภชนาการ,
@@ -54,6 +54,7 @@ function onOpen() {
     SpreadsheetApp.getUi().createMenu('ระบบบันทึกสุขภาพ')
       .addItem('1) ตั้งค่าความปลอดภัย / ผู้ดูแลระบบ (ทำครั้งแรก)', 'setupSecurity')
       .addItem('เพิ่มอีเมลผู้ดูแลระบบ (Admin)', 'manageAdmins')
+      .addItem('ตั้ง Username / Password สำหรับ Admin (ใช้บน Vercel)', 'manageAdminLogin')
       .addSeparator()
       .addItem('ตรวจ/สร้างโครงสร้างชีต', 'setupSheets')
       .addItem('ล้างแคชระบบ (ใช้หลังแก้ชีตด้วยมือ)', 'clearCacheMenu')
@@ -109,7 +110,7 @@ function setupSecurity() {
   ui.alert('ตั้งค่าความปลอดภัยเรียบร้อย',
     'ผู้ดูแลระบบ (Admin): ' + admins.join(', ') +
     '\n\nสร้างชีต "ผู้ใช้งาน" แล้ว (เก็บเฉพาะ PIN ที่เข้ารหัส ห้ามแก้ด้วยมือ)' +
-    '\nต่อไป: Deploy เว็บแอป แล้วเข้าด้วยลิงก์ของ Admin เพื่อสร้างบัญชีครู/ผอ. ในแท็บ "ผู้ใช้งาน"', ui.ButtonSet.OK);
+    '\nต่อไป: เลือกเมนู ตั้ง Username / Password สำหรับ Admin (ใช้บน Vercel) แล้วจึงเข้า Vercel เพื่อสร้างบัญชีครู/ผอ.', ui.ButtonSet.OK);
 }
 
 function manageAdmins() {
@@ -126,6 +127,33 @@ function manageAdmins() {
   if (admins.indexOf(em) < 0) { admins.push(em); setAdminEmails_(admins); }
   ui.alert('บันทึกแล้ว', 'ผู้ดูแลระบบ: ' + admins.join(', ') +
     '\n\nหมายเหตุ: Admin ต้องเข้าเว็บแอปด้วยลิงก์ของ Admin (Deploy แบบ "ผู้ใช้ที่เข้าถึงเว็บแอป") และมีสิทธิ์แก้ไขไฟล์ Sheet นี้', ui.ButtonSet.OK);
+}
+
+// ตั้งบัญชี Admin สำหรับเข้าใช้งานผ่าน Vercel (เก็บเฉพาะค่าแฮชใน Script Properties)
+function manageAdminLogin() {
+  var ui = menuGuard_(false);
+  if (!ui) return;
+  var p = PropertiesService.getScriptProperties();
+  var current = p.getProperty('ADMIN_LOGIN_USERNAME') || '(ยังไม่ตั้งค่า)';
+  var ur = ui.prompt('ตั้ง Username สำหรับ Admin', 'Username ปัจจุบัน: ' + current + '\nใช้ a-z ตัวเลข . _ - ความยาว 3-30 ตัว', ui.ButtonSet.OK_CANCEL);
+  if (ur.getSelectedButton() !== ui.Button.OK) return;
+  var username = String(ur.getResponseText() || '').trim().toLowerCase();
+  if (!/^[a-z0-9._-]{3,30}$/.test(username)) { ui.alert('Username ไม่ถูกต้อง'); return; }
+  var pr = ui.prompt('ตั้ง Password สำหรับ Admin', 'กำหนดรหัสผ่านอย่างน้อย 10 ตัวอักษร (ไม่แนะนำให้ใช้รหัสเดียวกับบัญชีอื่น)', ui.ButtonSet.OK_CANCEL);
+  if (pr.getSelectedButton() !== ui.Button.OK) return;
+  var password = String(pr.getResponseText() || '');
+  if (password.length < 10 || password.length > 128) { ui.alert('Password ต้องมีความยาว 10-128 ตัวอักษร'); return; }
+  var cr = ui.prompt('ยืนยัน Password', 'พิมพ์ Password เดิมอีกครั้ง', ui.ButtonSet.OK_CANCEL);
+  if (cr.getSelectedButton() !== ui.Button.OK) return;
+  if (String(cr.getResponseText() || '') !== password) { ui.alert('Password ไม่ตรงกัน ยกเลิกการตั้งค่า'); return; }
+  var salt = randHex_();
+  p.setProperties({
+    ADMIN_LOGIN_USERNAME: username,
+    ADMIN_LOGIN_SALT: salt,
+    ADMIN_LOGIN_HASH: hashPin_(password, salt, 'admin:' + username),
+    ADMIN_LOGIN_VERSION: String(Number(p.getProperty('ADMIN_LOGIN_VERSION') || 0) + 1)
+  }, false);
+  ui.alert('ตั้งค่าบัญชี Admin เรียบร้อย', 'Username: ' + username + '\nPassword ถูกเก็บเป็นค่าแฮช ไม่ได้เก็บเป็นข้อความปกติ\n\nใช้บัญชีนี้เข้าสู่ระบบจากหน้า Vercel ได้เลย', ui.ButtonSet.OK);
 }
 
 function setupSheets() {
@@ -198,8 +226,7 @@ function doGet() {
 /*     ฟังก์ชันงานเดิมทั้งหมดถูกเปลี่ยนเป็นชื่อลงท้าย "_" (เรียกจากหน้าเว็บตรง ๆ ไม่ได้) */
 /*  2) rpc() ตรวจ Session + บทบาท + ห้องที่ได้รับสิทธิ์ ก่อนเรียกฟังก์ชันงานทุกครั้ง */
 /*  3) PIN เก็บเป็นค่าแฮช (HMAC-SHA256 + salt รายคน + กุญแจลับใน Script Properties) */
-/*  4) Admin ยืนยันตัวตนด้วยอีเมล Google ที่ Google ยืนยันแล้ว                  */
-/*     (Session.getActiveUser) — ไม่เคยเชื่ออีเมลที่ส่งมาจากหน้าเว็บ              */
+/*  4) Admin ยืนยันตัวตนด้วย Username + Password ที่เก็บเป็นค่าแฮชใน Script Properties */
 /* ================================================================== */
 
 var ROLE_ADMIN = 'admin', ROLE_TEACHER = 'teacher', ROLE_DIRECTOR = 'director';
@@ -391,9 +418,13 @@ function authenticate_(token) {
   var s = readSession_(token);
   if (!s) fail_('หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่', 'AUTH');
   if (s.role === ROLE_ADMIN) {
-    var email = activeEmail_();
-    if (!email || email !== s.email || getAdminEmails_().indexOf(email) < 0) { killSession_(token); fail_('ยืนยันตัวตนผู้ดูแลระบบไม่ผ่าน กรุณาเข้าสู่ระบบใหม่', 'AUTH'); }
-    return { role: ROLE_ADMIN, username: email, name: 'ผู้ดูแลระบบ', email: email, allRooms: true, rooms: [], readOnly: false };
+    var props = PropertiesService.getScriptProperties();
+    var adminUser = props.getProperty('ADMIN_LOGIN_USERNAME') || '';
+    var adminVer = Number(props.getProperty('ADMIN_LOGIN_VERSION') || 0);
+    if (s.authType !== 'password' || !adminUser || s.u !== adminUser || s.v !== adminVer) {
+      killSession_(token); fail_('บัญชี Admin ถูกเปลี่ยนแปลง กรุณาเข้าสู่ระบบใหม่', 'AUTH');
+    }
+    return { role: ROLE_ADMIN, username: adminUser, name: 'ผู้ดูแลระบบ', email: '', allRooms: true, rooms: [], readOnly: false };
   }
   var u = findUser_(s.u);
   if (!u || u.status !== 'active' || u.ver !== s.v || u.role !== s.role ||
@@ -413,8 +444,9 @@ function meOf_(ctx) {
 var MSG_BAD_LOGIN = 'Username หรือ PIN ไม่ถูกต้อง (กรอก PIN ผิดหลายครั้ง บัญชีจะถูกล็อก)';
 
 function helloInfo_() {
-  var email = activeEmail_(), admins = getAdminEmails_(), isAdmin = !!email && admins.indexOf(email) >= 0;
-  return { google: { isAdmin: isAdmin, email: isAdmin ? email : '' }, adminConfigured: admins.length > 0, idleSec: AUTH.idleSec };
+  var p = PropertiesService.getScriptProperties();
+  return { adminLoginConfigured: !!(p.getProperty('ADMIN_LOGIN_USERNAME') && p.getProperty('ADMIN_LOGIN_HASH') && p.getProperty('ADMIN_LOGIN_SALT')),
+           idleSec: AUTH.idleSec };
 }
 
 function loginRpc_(username, pin) {
@@ -449,14 +481,34 @@ function loginRpc_(username, pin) {
   }, ['users']);
 }
 
-function adminEnterRpc_() {
-  var email = activeEmail_();
-  if (!email || getAdminEmails_().indexOf(email) < 0) {
-    return { ok: false, code: 'FORBIDDEN', message: 'บัญชี Google ที่ใช้อยู่ไม่ใช่ผู้ดูแลระบบ (ต้องเปิดจากลิงก์ของ Admin และเข้าด้วยอีเมลที่ตั้งเป็น Admin)' };
+function adminLoginRpc_(username, password) {
+  username = String(username == null ? '' : username).trim().toLowerCase();
+  password = String(password == null ? '' : password);
+  var props = PropertiesService.getScriptProperties();
+  var storedUser = props.getProperty('ADMIN_LOGIN_USERNAME') || '';
+  var salt = props.getProperty('ADMIN_LOGIN_SALT') || 'x';
+  var storedHash = props.getProperty('ADMIN_LOGIN_HASH') || '';
+  var ver = Number(props.getProperty('ADMIN_LOGIN_VERSION') || 0);
+  var cache = CacheService.getScriptCache();
+  var failKey = 'ADMIN_FAIL:' + bytesToHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, username, Utilities.Charset.UTF_8)).substring(0, 24);
+  var fails = Number(cache.get(failKey) || 0);
+  var bad = { ok: false, code: 'BAD', message: 'Username หรือ Password ไม่ถูกต้อง' };
+  if (fails >= AUTH.maxFails) return { ok: false, code: 'LOCKED', message: 'เข้าสู่ระบบ Admin ไม่สำเร็จหลายครั้ง กรุณารอ 15 นาทีแล้วลองใหม่' };
+  if (!/^[a-z0-9._-]{3,30}$/.test(username) || password.length < 1 || password.length > 128) {
+    hashPin_('dummy-password', 'x', 'admin-dummy');
+    cache.put(failKey, String(fails + 1), 900);
+    return bad;
   }
-  var token = newSession_({ role: ROLE_ADMIN, email: email });
-  return ok_({ token: token, me: meOf_({ username: email, name: 'ผู้ดูแลระบบ', role: ROLE_ADMIN, readOnly: false, allRooms: true, email: email }), idleSec: AUTH.idleSec });
+  var computed = hashPin_(password, salt, 'admin:' + username);
+  if (!storedUser || username !== storedUser || !storedHash || !safeEq_(computed, storedHash)) {
+    cache.put(failKey, String(fails + 1), 900);
+    return bad;
+  }
+  cache.remove(failKey);
+  var token = newSession_({ role: ROLE_ADMIN, authType: 'password', u: storedUser, v: ver });
+  return ok_({ token: token, me: meOf_({ username: storedUser, name: 'ผู้ดูแลระบบ', role: ROLE_ADMIN, readOnly: false, allRooms: true }), idleSec: AUTH.idleSec });
 }
+
 
 /* ---------- ขอบเขตข้อมูลตามสิทธิ์ ---------- */
 
@@ -881,7 +933,7 @@ function rpc(token, fn, args) {
     args = Array.isArray(args) ? args : [];
     if (fn === 'hello') return ok_(helloInfo_());
     if (fn === 'login') return loginRpc_(args[0], args[1]);
-    if (fn === 'adminEnter') return adminEnterRpc_();
+    if (fn === 'adminLogin') return adminLoginRpc_(args[0], args[1]);
     if (fn === 'logout') { killSession_(token); return ok_({ bye: true }); }
     if (!Object.prototype.hasOwnProperty.call(RPC, fn)) fail_('ไม่พบคำสั่งที่เรียก', 'BAD');
     var def = RPC[fn];

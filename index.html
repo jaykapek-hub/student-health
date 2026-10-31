@@ -188,7 +188,7 @@ body.ro .dc,body.ro th.dh,body.ro .kc,body.ro th.ch{cursor:default}
 <div id="loginView" style="display:none">
   <div class="lg-card">
     <div class="lg-title">ระบบบันทึกสุขภาพและกิจวัตรประจำวันนักเรียน</div>
-    <div class="hint">เข้าสู่ระบบด้วย Username และ PIN 6 หลัก</div>
+    <div class="hint">ครู/ผู้อำนวยการใช้ Username + PIN 6 หลัก · Admin ใช้ Username + Password</div>
     <div id="lgMsg" class="banner" style="display:none;margin-top:12px"></div>
     <form id="lgForm" autocomplete="off">
       <label for="lgUser">Username</label>
@@ -197,7 +197,14 @@ body.ro .dc,body.ro th.dh,body.ro .kc,body.ro th.ch{cursor:default}
       <input id="lgPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password">
       <button class="btn pri" id="lgGo" type="submit">เข้าสู่ระบบ</button>
     </form>
-    <div id="lgAdmin" style="display:none"><hr><button class="btn" id="lgAdminBtn" style="width:100%">เข้าสู่ระบบผู้ดูแลระบบ (Google: <span id="lgAdminMail"></span>)</button></div>
+    <div id="lgAdmin" style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">
+      <b>เข้าสู่ระบบผู้ดูแลระบบ (Admin)</b>
+      <label for="lgAdminUser">Admin Username</label>
+      <input id="lgAdminUser" autocomplete="username" autocapitalize="none" maxlength="30">
+      <label for="lgAdminPass">Admin Password</label>
+      <input id="lgAdminPass" type="password" autocomplete="current-password" maxlength="128">
+      <button class="btn" id="lgAdminBtn" type="button" style="width:100%;margin-top:8px">เข้าสู่ระบบ Admin</button>
+    </div>
     <div class="hint" id="lgNote" style="margin-top:12px"></div>
   </div>
 </div>
@@ -487,9 +494,9 @@ function wipeUI(){
 function showLogin(msg,err,keepFields){
   showEl('appUI',false);showEl('loginView',true);if(!keepFields)$('lgPin').value='';
   lgMsg(msg||'',!!err);
-  var h=HELLO||{},isA=!!(h.google&&h.google.isAdmin);
-  showEl('lgAdmin',isA);$('lgAdminMail').textContent=isA?h.google.email:'';
-  $('lgNote').textContent=(h.adminConfigured===false)?'ระบบยังไม่ได้ตั้งผู้ดูแลระบบ: เจ้าของไฟล์ Google Sheet ต้องเลือกเมนู "ระบบบันทึกสุขภาพ > 1) ตั้งค่าความปลอดภัย" ก่อน':'';
+  var h=HELLO||{};
+  showEl('lgAdmin',true);
+  $('lgNote').textContent=(h.adminLoginConfigured===false)?'ยังไม่ได้ตั้งบัญชี Admin: เปิด Google Sheet แล้วเลือกเมนู ระบบบันทึกสุขภาพ > ตั้ง Username / Password สำหรับ Admin (ใช้บน Vercel)':'';
   if(!keepFields)setTimeout(function(){try{$('lgUser').focus();}catch(e){}},50);
 }
 function lgMsg(msg,err){var m=$('lgMsg');m.textContent=msg||'';m.className='banner'+(err?' bad':'');m.style.display=msg?'':'none';}
@@ -513,9 +520,11 @@ async function doLogin(e){
   finally{$('lgGo').disabled=false;}
 }
 async function doAdminLogin(){
+  var u=$('lgAdminUser').value.trim().toLowerCase(),p=$('lgAdminPass').value;
+  if(!u||!p){lgMsg('กรอก Admin Username และ Password ให้ครบ',true);return;}
   $('lgAdminBtn').disabled=true;
-  try{var d=await api('adminEnter');await afterLogin(d);}
-  catch(er){lgMsg(errMsg(er),true);}
+  try{var d=await api('adminLogin',u,p);$('lgAdminUser').value='';$('lgAdminPass').value='';await afterLogin(d);}
+  catch(er){$('lgAdminPass').value='';lgMsg(errMsg(er),true);}
   finally{$('lgAdminBtn').disabled=false;}
 }
 async function afterLogin(d){
@@ -526,7 +535,7 @@ async function afterLogin(d){
 function applyRole(){
   var m=S.me,ro=m.readOnly,adm=m.role==='admin';
   document.body.classList.toggle('ro',ro);
-  $('whoName').textContent=(adm?(m.email||'Admin'):(m.name||m.username))+' · '+roleLabel(m.role)+(ro?' (ดูอย่างเดียว)':'');
+  $('whoName').textContent=(adm?('Admin: '+(m.username||'admin')):(m.name||m.username))+' · '+roleLabel(m.role)+(ro?' (ดูอย่างเดียว)':'');
   document.querySelectorAll('#tab-daily .bar > div > .hint').forEach(function(e){e.style.display=ro?'none':'';});
   var tabs={settings:!ro,users:adm};
   document.querySelectorAll('#mainTabs button').forEach(function(b){
