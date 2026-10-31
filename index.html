@@ -1,131 +1,1875 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>Civil Daily Report</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input, select, textarea { width: 100%; padding: 8px; margin: 6px 0 14px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }
-    button:hover { background: #0056b3; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
-    th { background: #e9ecef; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบบันทึกสุขภาพและกิจวัตรประจำวันนักเรียน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style id="pageStyle"></style>
+<style>
+:root{--ink:#1b2733;--muted:#6b7785;--accent:#1f4e79;--line:#d9dee5;--bg:#f4f6f9;--ok:#1a7f4b;--warn:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Sarabun','TH Sarabun New',sans-serif;font-size:15px;color:var(--ink);background:var(--bg)}
+button,select,input,textarea{font-family:inherit;font-size:inherit;color:inherit}
+.top{background:var(--accent);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand b{font-size:18px;display:block}.brand span{opacity:.85;font-size:13px}
+.period{display:flex;gap:8px;align-items:center;font-size:13px}
+.period select{padding:5px 8px;border-radius:6px;border:0;background:#fff;color:var(--ink)}
+.period .btn{padding:5px 12px;border-radius:6px;background:#fff;color:var(--accent);font-weight:600;border:0}
+.mini{width:100%;border-collapse:collapse;font-size:13px}.mini th,.mini td{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}.mini .w{color:#b9770e}.mini .e{color:var(--warn)}
+.imp-box{width:100%;min-height:90px;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:inherit}
+select option{color:var(--ink);background:#fff}
+.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:4px;padding:0 16px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:12px 16px;cursor:pointer;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--accent);border-color:var(--accent)}
+main{padding:14px 12px;margin:0}
+section.tab{display:none}section.tab.on{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:16px}
+.pills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pills button{border:1px solid var(--line);background:#fff;padding:6px 16px;border-radius:999px;cursor:pointer}
+.pills button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sub{display:none}.sub.on{display:block}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.btn{border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:8px;cursor:pointer}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.sm{padding:3px 9px}
+.btn.dirty{box-shadow:0 0 0 3px #f6c85f99}
+.hint{color:var(--muted);font-size:13px}
+.banner{background:#fff8e1;border:1px solid #f1d98a;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:14px}
+.scroll{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:70vh}
+table.sheet{border-collapse:separate;border-spacing:0;font-size:14px;min-width:100%}
+table.sheet.fx{table-layout:fixed;width:100%}
+.sheet th,.sheet td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 6px;height:36px;box-sizing:border-box;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet thead th{height:auto;padding:4px 6px}
+.sheet th{background:#f0f3f7;position:sticky;top:0;z-index:2;font-weight:600}
+.sheet .c-no{position:sticky;left:0;z-index:3;background:#fff}
+.sheet .c-name{position:sticky;left:40px;z-index:3;background:#fff;text-align:left}
+.sheet th.c-no,.sheet th.c-name{background:#f0f3f7;z-index:4}
+.dc{cursor:pointer;user-select:none;font-size:16px;line-height:1;padding:0}
+.dc.on{color:var(--ok);font-weight:700;background:#eaf7ef}
+.we{background:#eceff3}
+.hol{background:repeating-linear-gradient(45deg,#e3e6ea,#e3e6ea 4px,#cfd4db 4px,#cfd4db 8px)}
+th.dh{cursor:pointer;font-size:12px;line-height:1.25;padding:4px 0}
+.sheet td.s-note{text-align:left}
+#tbl-health thead th{white-space:normal;line-height:1.25}
+.kc{cursor:pointer;user-select:none;font-weight:700;padding:0!important}
+.kc.g{color:#1a7f4b}.kc.x{color:#c0392b}.kc.ov{box-shadow:inset 0 0 0 2px #e67e22}.kc.sm{background:#f6f8fb}
+th.ch{cursor:pointer}#tbl-check thead th{font-size:12px;padding:4px 0}#tbl-check thead tr:nth-child(1) th{font-size:14px}
+#tbl-check thead tr:nth-child(1) th{height:30px}#tbl-check thead tr:nth-child(2) th{top:30px;height:30px}
+.hin.inv{border-color:var(--warn);background:#fdecea}.hin.wn{border-color:#d4a017;background:#fff8e1}
+.vmsg-bad{color:var(--warn);font-weight:600}.vmsg-warn{color:#9a6b00}
+.hin{width:64px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;text-align:right}
+.st-ok{color:var(--ok);font-weight:700}.st-under{color:var(--warn);font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat small{color:var(--muted)}.stat b{display:block;font-size:28px;line-height:1.2}
+.grid2{display:grid;grid-template-columns:1fr 2fr;gap:14px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.edt thead{display:none}.edt,.edt tbody{display:block}.scroll:has(.edt){overflow:visible;max-height:none;border:0;background:none}
+.edt tr{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;position:relative;background:#fff}
+.edt tr td{display:block;border:0;padding:0;min-width:0}
+.edt td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+.edt td.full{grid-column:1/-1}.edt td.o1{order:1}.edt td.o2{order:2}.edt td.o3{order:3}
+.edt td.del{position:absolute;top:6px;right:6px}
+.edt td.rn{font-weight:700;color:var(--accent)}.edt td.rn::before{content:'คนที่ '}
+.edt td.rfull{font-weight:600}
+.edt input,.edt select{padding:8px;font-size:16px;box-sizing:border-box}
+.edt input[type=checkbox]{width:auto}
+.fields{grid-template-columns:1fr!important}
+.card .bar{flex-wrap:wrap;gap:8px}
+.top{padding:8px 12px;gap:6px}.brand b{font-size:16px}.period{flex-wrap:wrap;width:100%;gap:6px 6px;font-size:12px}.period select{padding:5px 4px;max-width:100%;min-width:0}#selRoom{max-width:46vw}.sheet th.dh,.sheet td.dc{padding:0!important;font-size:12px;text-overflow:clip}.period .btn{margin-left:auto;padding:5px 10px}.who{width:100%;justify-content:space-between}.tabs{padding:0 8px}.tabs button{padding:12px 12px}}
+.chartbox{position:relative;height:250px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 16px}
+.fields label{display:block;font-size:13px;color:var(--muted);margin-bottom:2px}
+.fields input,.fields select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.edt{width:100%;border-collapse:collapse;font-size:14px}
+.edt th,.edt td{border-bottom:1px solid var(--line);padding:4px;text-align:left}
+.edt input,.edt select{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.qrow{display:grid;grid-template-columns:230px 1fr;gap:4px 16px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.qrow.fw{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.qrow .k{font-weight:600}
+.qrow .ln{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;min-height:26px}
+.qrow label{white-space:nowrap}
+.qrow input[type=text]{border:0;border-bottom:1px solid #999;padding:2px 4px;background:transparent;min-width:140px}
+@media(max-width:700px){.qrow{grid-template-columns:1fr}}
+#loading{position:fixed;inset:0;background:#ffffffb3;display:none;align-items:center;justify-content:center;z-index:99;font-weight:600;color:var(--accent)}
+#topbar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:101;opacity:0;pointer-events:none}
+#topbar.on{opacity:1;width:85%;transition:width 8s cubic-bezier(.1,.7,.2,1)}
+body.pload section.tab{opacity:.5;pointer-events:none;transition:opacity .15s}
+.btn:disabled{opacity:.6;cursor:wait}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1b2733;color:#fff;padding:10px 18px;border-radius:8px;display:none;z-index:100}
+#toast.err{background:var(--warn)}
+#printRoot{display:none}
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+.lg-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 24px;width:100%;max-width:380px;box-shadow:0 6px 24px #1f4e7922}
+.lg-title{font-size:19px;font-weight:700;color:var(--accent);margin-bottom:2px;line-height:1.35}
+.lg-card label{display:block;font-size:13px;color:var(--muted);margin:12px 0 3px}
+.lg-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:17px;background:#fff}
+.lg-card input#lgPin{letter-spacing:6px;font-size:20px}
+.lg-card .btn.pri{width:100%;margin-top:16px;padding:11px;font-size:16px}
+.lg-card hr{border:0;border-top:1px solid var(--line);margin:18px 0 12px}
+.banner.bad{background:#fdecea;border-color:#e6a39b}
+.who{display:flex;gap:8px;align-items:center;font-size:13px}
+.who .btn{padding:5px 12px;border-radius:6px;background:#fff;color:var(--accent);font-weight:600;border:0}
+.rchk{display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0;font-size:14px;color:var(--ink)!important}
+.rchk input{width:auto!important}
+body.ro .qrow input[disabled]{opacity:1;color:var(--ink)}
+body.ro .dc,body.ro th.dh,body.ro .kc,body.ro th.ch{cursor:default}
+
+/* ---------- พิมพ์ ---------- */
+@media print{
+  body{background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #toast,#loading,#loginView{display:none!important}
+  html,body{margin:0;padding:0;height:auto}
+  body.printing #appUI{display:none!important}
+  body.printing #printRoot{display:block}
+  .p-title{text-align:center;font-weight:700;font-size:16pt;margin:0;line-height:1.7;padding-top:1mm}
+  .p-sub{text-align:center;font-size:11pt;margin:1mm 0 3mm}
+  .ptable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt}
+  .ptable th,.ptable td{border:1px solid #000;text-align:center;padding:0;height:8mm;overflow:hidden;color:#000}
+  .ptable.tall th,.ptable.tall td{height:8mm}
+  .ptable.chk th,.ptable.chk td{font-size:9pt}.ptable.chk td{height:7mm}.ptable.chk th{font-size:8.5pt}
+  .p-note{font-size:10pt;margin:0 0 2mm}
+  .ptable th{height:auto;padding:.8mm 0;background:#eee;font-weight:700;line-height:1.15}
+  .ptable td.nm{text-align:left;padding-left:1.5mm;white-space:nowrap}
+  .ptable .we{background:#e6e6e6}
+  .ptable .hol{background:#cfcfcf}
+  .ptable thead{display:table-header-group}
+  .ptable tr{page-break-inside:avoid}
+  .p-sig{display:flex;justify-around;margin-top:8mm;text-align:center;font-size:11pt;line-height:1.5;page-break-inside:avoid}
+  .pi{font-size:11.5pt;line-height:1.5}
+  .pi-box{display:inline-block;border:1.5pt solid #000;border-radius:5px;padding:1mm 10mm;font-weight:700;font-size:16pt}
+  .pi-r{display:grid;grid-template-columns:47mm 1fr;padding:1.1mm 0;border-bottom:.5pt dotted #777}
+  .pi-r.fw{display:block}
+  .pi-r .k{font-weight:700}
+  .pi-r .ln{line-height:1.55}
+  .sm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin:3mm 0 4mm}
+  .sm-card{border:.6pt solid #000;border-radius:2mm;padding:2mm 3mm;line-height:1.2}
+  .sm-card small{display:block;font-size:9.5pt}
+  .sm-card b{font-size:18pt;line-height:1.1}
+  .sm-card span{font-size:9pt;margin-left:1mm}
+  .sm-sec{margin-bottom:4mm;break-inside:avoid;page-break-inside:avoid}
+  .sm-h{font-weight:700;font-size:12pt;margin:0 0 2mm;border-bottom:.8pt solid #000;break-after:avoid;page-break-after:avoid}
+  .sm-row{display:flex;align-items:center;gap:8mm}
+  .donut{width:40mm;height:40mm;border-radius:50%;position:relative;flex:none}
+  .donut i{position:absolute;top:11mm;left:11mm;right:11mm;bottom:11mm;background:#fff;border-radius:50%}
+  .sm-cnt{flex:1}
+  .sm-cnt td,.sm-cnt th{height:6.2mm}
+  .sm-cnt td.l{text-align:left;padding-left:2mm}
+  .sw{display:inline-block;width:3.2mm;height:3.2mm;margin-right:2mm;vertical-align:-.4mm}
+  .sm-lg{font-size:9.5pt;font-weight:400;float:right}
+  .bc{padding:0 1.5mm!important;text-align:left!important}
+  .bc .b1,.bc .b2{height:2.2mm;margin:.3mm 0}
+  .bc .b1{background:#1f4e79}.bc .b2{background:#5aa9d6}
+  .ptable.cmp th,.ptable.cmp td{height:6.4mm;font-size:9pt}
+  .pgb{break-before:page;page-break-before:always;padding-top:2mm}
+  .sm-p1{display:flex;gap:6mm;align-items:flex-start}
+  .sm-left{width:96mm;flex:none}
+  .sm-right{flex:1;min-width:0}
+  .sm-left .sm-cards{grid-template-columns:1fr 1fr;gap:2mm;margin:0 0 3mm}
+  .sm-left .sm-card{padding:1.2mm 2.5mm}
+  .sm-left .sm-card b{font-size:15pt}
+  .sm-left .sm-sec{margin-bottom:2mm}
+  .sm-left .donut{width:34mm;height:34mm;margin:0 auto 2mm}
+  .sm-left .donut i{top:9mm;left:9mm;right:9mm;bottom:9mm}
+  .sm-left .sm-cnt td,.sm-left .sm-cnt th{height:5.4mm;font-size:9pt}
+  .sm-more{break-before:page;page-break-before:always;margin-top:0}
+  .p-sig.tight{margin-top:5mm}
+  .pi-r .opt{display:inline-block;margin-right:4.5mm;white-space:nowrap}
+  .bx{display:inline-block;width:3.3mm;height:3.3mm;border:.6pt solid #000;margin-right:1.5mm;vertical-align:-.5mm;text-align:center;line-height:3mm;font-size:9pt}
+  .ul{display:inline-block;border-bottom:.6pt dotted #000;min-width:30mm;padding:0 1mm}
+}
+</style>
 </head>
 <body>
-
-  <div class="card">
-    <h2>📝 บันทึก Daily Report งาน Civil</h2>
-    <form id="reportForm">
-      <label>วันที่:</label>
-      <input type="date" id="date" required>
-
-      <label>สถานที่ / โซน:</label>
-      <input type="text" id="location" placeholder="เช่น โซนคลังสินค้า NMM-Q" required>
-
-      <label>ประเภทงาน:</label>
-      <select id="workType">
-        <option value="Earthwork">งานดิน (Earthwork)</option>
-        <option value="Concrete">งานคอนกรีต (Concrete)</option>
-        <option value="Formwork/Rebar">งานแบบหล่อและเหล็กเสริม (Formwork & Rebar)</option>
-      </select>
-
-      <label>รายละเอียดการดำเนินงาน:</label>
-      <textarea id="description" rows="3" placeholder="ระบุรายละเอียดงานวันนี้..." required></textarea>
-
-      <label>ผู้ตรวจสอบ / ผู้รายงาน:</label>
-      <input type="text" id="inspector" placeholder="ชื่อผู้รายงาน" required>
-
-      <button type="submit" id="submitBtn">บันทึกรายงาน</button>
+<div id="loginView" style="display:none">
+  <div class="lg-card">
+    <div class="lg-title">ระบบบันทึกสุขภาพและกิจวัตรประจำวันนักเรียน</div>
+    <div class="hint">เข้าสู่ระบบด้วย Username และ PIN 6 หลัก</div>
+    <div id="lgMsg" class="banner" style="display:none;margin-top:12px"></div>
+    <form id="lgForm" autocomplete="off">
+      <label for="lgUser">Username</label>
+      <input id="lgUser" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="30">
+      <label for="lgPin">PIN 6 หลัก</label>
+      <input id="lgPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password">
+      <button class="btn pri" id="lgGo" type="submit">เข้าสู่ระบบ</button>
     </form>
+    <div id="lgAdmin" style="display:none"><hr><button class="btn" id="lgAdminBtn" style="width:100%">เข้าสู่ระบบผู้ดูแลระบบ (Google: <span id="lgAdminMail"></span>)</button></div>
+    <div class="hint" id="lgNote" style="margin-top:12px"></div>
   </div>
+</div>
+<div id="appUI" style="display:none">
+  <header class="top">
+    <div class="brand"><b id="schoolTitle">กำลังโหลด...</b><span id="classSub"></span></div>
+    <div class="period">
+      <span>ปีการศึกษา</span><select id="selYear"></select>
+      <span>เดือน</span><select id="selMonth"></select>
+      <span>ห้อง</span><select id="selRoom"></select>
+      <button class="btn" id="btnPrintAll" title="พิมพ์ สรุป + ดื่มนม + แปรงฟัน + น้ำหนักส่วนสูง ต่อเนื่อง (A4 แนวนอน)">พิมพ์ทั้งหมด</button>
+    </div>
+    <div class="who"><span id="whoName"></span><button class="btn" id="btnLogout">ออกจากระบบ</button></div>
+  </header>
+  <nav class="tabs" id="mainTabs">
+    <button data-tab="dash" class="on">สรุปผล</button>
+    <button data-tab="daily">บันทึกประจำวัน</button>
+    <button data-tab="indiv">รายบุคคล</button>
+    <button data-tab="report">ค้นหา / รายงาน</button>
+    <button data-tab="settings">ตั้งค่า</button>
+    <button data-tab="users" style="display:none">ผู้ใช้งาน</button>
+  </nav>
+  <main>
+    <!-- สรุปผล -->
+    <section class="tab on" id="tab-dash">
+      <div class="bar"><b id="cap-dash"></b><button class="btn" id="btnPrint-dash">พิมพ์สรุป A4 แนวนอน</button></div>
+      <div class="cards" id="dashCards"></div>
+      <div class="grid2">
+        <div class="card"><h3>ภาวะโภชนาการ</h3><div class="chartbox"><canvas id="chNutri"></canvas></div></div>
+        <div class="card"><h3>จำนวนวันที่ดื่มนม / แปรงฟัน รายคน</h3><div class="chartbox"><canvas id="chRoutine"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">พัฒนาการน้ำหนัก-ส่วนสูง ตลอดปีการศึกษา</h3><select id="selGrowth"></select></div>
+        <div class="chartbox"><canvas id="chGrowth"></canvas></div>
+      </div>
+    </section>
 
-  <div class="card">
-    <h3>📊 ประวัติรายงานทั้งหมด</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>วันที่</th>
-          <th>โซน</th>
-          <th>ประเภท</th>
-          <th>รายละเอียด</th>
-          <th>ผู้รายงาน</th>
-        </tr>
-      <tbody id="reportTableBody">
-        <tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>
-      </tbody>
-    </table>
-  </div>
+    <!-- บันทึกประจำวัน -->
+    <section class="tab" id="tab-daily">
+      <div class="pills" id="subPills">
+        <button data-sub="milk" class="on">ดื่มนม</button>
+        <button data-sub="brush">แปรงฟัน</button>
+        <button data-sub="health">ชั่งน้ำหนัก-วัดส่วนสูง</button>
+        <button data-sub="check">ตรวจสุขภาพ</button>
+      </div>
+      <div class="sub on" id="sub-milk">
+        <div class="bar"><div><b id="cap-milk"></b><div class="hint">คลิกช่องเพื่อติ๊ก · คลิกหัววันเพื่อติ๊กทั้งห้อง (เฉพาะวันเรียน)</div></div>
+          <div><button class="btn pri" id="btnSave-milk">บันทึก</button> <button class="btn" id="btnPrint-milk">พิมพ์ A4</button></div></div>
+        <div class="scroll"><table class="sheet" id="tbl-milk"></table></div>
+      </div>
+      <div class="sub" id="sub-brush">
+        <div class="bar"><div><b id="cap-brush"></b><div class="hint">คลิกช่องเพื่อติ๊ก · คลิกหัววันเพื่อติ๊กทั้งห้อง (เฉพาะวันเรียน)</div></div>
+          <div><button class="btn pri" id="btnSave-brush">บันทึก</button> <button class="btn" id="btnPrint-brush">พิมพ์ A4</button></div></div>
+        <div class="scroll"><table class="sheet" id="tbl-brush"></table></div>
+      </div>
+      <div class="sub" id="sub-health">
+        <div class="bar"><div><b id="cap-health"></b>
+            <span class="hint" style="margin-left:10px">เกณฑ์: น้ำหนักตามเกณฑ์ส่วนสูง (กรมอนามัย)</span></div>
+          <div><button class="btn pri" id="btnSave-health">บันทึก</button> <button class="btn" id="btnPrint-health">พิมพ์ A4</button></div></div>
+        <div id="critBanner"></div>
+        <div class="scroll"><table class="sheet" id="tbl-health"></table></div>
+      </div>
+      <div class="sub" id="sub-check">
+        <div class="bar"><div><b id="cap-check"></b><div class="hint">คลิกช่อง: ✓ ดี → ✗ ปรับปรุง → ว่าง · คลิกหัวคอลัมน์ = ✓ ทั้งห้อง<br>ช่อง "สรุป" คำนวณเอง (✓ เมื่อดี ≥75% ของสัปดาห์ที่ตรวจ) · คลิกเพื่อแก้เอง (ขอบส้ม) · คลิกจนว่างเพื่อกลับเป็นอัตโนมัติ</div></div>
+          <div><button class="btn pri" id="btnSave-check">บันทึก</button> <button class="btn" id="btnPrint-check">พิมพ์ A4</button></div></div>
+        <div class="scroll"><table class="sheet" id="tbl-check"></table></div>
+      </div>
+    </section>
 
-  <script>
-    // ⚠️ แทนที่ด้วย Web App URL จาก Google Apps Script ของคุณ
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzxrHoXsVuWBnmyZjQORgbw_SFYEn1xaNejV6hlEQ3FpUcoSjgjr3XUHOWxTZSX_Ls3/exec";
+    <!-- รายบุคคล -->
+    <section class="tab" id="tab-indiv">
+      <div class="card">
+        <div class="bar">
+          <div><select id="selIndiv" style="padding:6px 10px;min-width:280px"></select>
+            <span class="hint" id="indivNick"></span></div>
+          <div><button class="btn pri" id="btnSave-indiv">บันทึกคนนี้</button> <button class="btn" id="btnClear-indiv">ล้างแบบนี้</button> <button class="btn" id="btnPrint-indiv">พิมพ์ (1 หน้า A4)</button></div>
+        </div>
+        <form id="indivForm" onsubmit="return false">
+          <div class="qrow"><span class="k">1. ประวัติการคลอด</span><div class="opts"><div class="ln"><label><input type="radio" name="birth" value="normal"> ปกติ</label><label><input type="radio" name="birth" value="abnormal"> ไม่ปกติ</label></div></div></div>
+          <div class="qrow"><span class="k">2. สายตา</span><div class="opts"><div class="ln"><label><input type="radio" name="eye" value="normal"> ปกติ</label><label><input type="radio" name="eye" value="abnormal"> ไม่ปกติ</label></div></div></div>
+          <div class="qrow"><span class="k">3. การเริ่มพูด</span><div class="opts"><div class="ln"><label><input type="radio" name="speech" value="normal"> ปกติ (ภายใน 1 ขวบ)</label><label><input type="radio" name="speech" value="abnormal"> ไม่ปกติ (หลัง 1 ขวบครึ่ง)</label></div></div></div>
+          <div class="qrow"><span class="k">4. การเริ่มเดิน</span><div class="opts"><div class="ln"><label><input type="radio" name="walk" value="normal"> ปกติ (ภายใน 1 ขวบครึ่ง)</label><label><input type="radio" name="walk" value="abnormal"> ไม่ปกติ (หลัง 1 ขวบครึ่ง)</label></div></div></div>
+          <div class="qrow"><span class="k">5. การผ่าตัด</span><div class="opts"><div class="ln"><label><input type="radio" name="surg" value="none"> ไม่มี</label></div><div class="ln"><label><input type="radio" name="surg" value="minor"> ไม่รุนแรง คือ</label><input type="text" name="surgMinor"><label><input type="radio" name="surg" value="major"> รุนแรง คือ</label><input type="text" name="surgMajor"></div></div></div>
+          <div class="qrow fw"><span class="k">6. ประสบอุบัติเหตุร้ายแรง คือ</span><input type="text" name="accident" style="min-width:260px"><label>เมื่อ <input type="text" name="accidentDate"></label></div>
+          <div class="qrow"><span class="k">7.1 โรคประจำตัว บิดา</span><div class="opts"><div class="ln"><label><input type="radio" name="fatherMode" value="none"> ไม่มี</label></div><div class="ln"><label><input type="radio" name="fatherMode" value="has"> มี คือ</label><label><input type="checkbox" name="fatherD" value="tb"> วัณโรค</label><label><input type="checkbox" name="fatherD" value="dm"> เบาหวาน</label><label><input type="checkbox" name="fatherD" value="ep"> ลมบ้าหมู</label><label><input type="checkbox" name="fatherD" value="hd"> หัวใจ</label><label><input type="checkbox" name="fatherD" value="ca"> มะเร็ง</label></div><div class="ln"><label><input type="radio" name="fatherMode" value="ill"> เคยป่วยเป็น</label><input type="text" name="fatherIll" style="min-width:260px"></div></div></div>
+          <div class="qrow"><span class="k">7.2 โรคประจำตัว มารดา</span><div class="opts"><div class="ln"><label><input type="radio" name="motherMode" value="none"> ไม่มี</label></div><div class="ln"><label><input type="radio" name="motherMode" value="has"> มี คือ</label><label><input type="checkbox" name="motherD" value="tb"> วัณโรค</label><label><input type="checkbox" name="motherD" value="dm"> เบาหวาน</label><label><input type="checkbox" name="motherD" value="ep"> ลมบ้าหมู</label><label><input type="checkbox" name="motherD" value="hd"> หัวใจ</label><label><input type="checkbox" name="motherD" value="ca"> มะเร็ง</label></div><div class="ln"><label><input type="radio" name="motherMode" value="ill"> เคยป่วยเป็น</label><input type="text" name="motherIll" style="min-width:260px"></div></div></div>
+          <div class="qrow"><span class="k">8. โรคประจำตัว นักเรียน</span><div class="opts"><div class="ln"><label><input type="radio" name="stuMode" value="none"> ไม่มี</label></div><div class="ln"><label><input type="radio" name="stuMode" value="has"> มี คือ</label><label><input type="checkbox" name="stuD" value="tb"> วัณโรค</label><label><input type="checkbox" name="stuD" value="dm"> เบาหวาน</label><label><input type="checkbox" name="stuD" value="ep"> ลมบ้าหมู</label><label><input type="checkbox" name="stuD" value="hd"> หัวใจ</label><label><input type="checkbox" name="stuD" value="ca"> มะเร็ง</label></div><div class="ln"><label><input type="radio" name="stuMode" value="ill"> เคยป่วยเป็น</label><input type="text" name="stuIll" style="min-width:260px"></div></div></div>
+          <div class="qrow"><span class="k">9. การได้รับภูมิคุ้มกัน</span><div class="opts"><div class="ln"><label><input type="checkbox" name="vacc" value="dip"> คอตีบ</label><label><input type="checkbox" name="vacc" value="rub"> หัดเยอรมัน</label><label><input type="checkbox" name="vacc" value="per"> ไอกรน</label><label><input type="checkbox" name="vacc" value="tet"> บาดทะยัก</label></div><div class="ln"><label><input type="checkbox" name="vacc" value="pol"> โปลิโอ</label><label><input type="checkbox" name="vacc" value="hep"> ตับอักเสบ</label><label><input type="checkbox" name="vacc" value="bcg"> บีซีจี</label><label><input type="checkbox" name="vacc" value="oth"> อื่น ๆ</label><input type="text" name="vaccOther"></div></div></div>
+          <div class="qrow fw"><span class="k">สถานพยาบาลที่รักษาเป็นประจำ</span><input type="text" name="hospital" style="min-width:320px"><label>โทรศัพท์ <input type="text" name="hospitalTel"></label></div>
+        </form>
+      </div>
+    </section>
 
-    // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
-    function loadReports() {
-      fetch(GAS_URL)
-        .then(res => res.json())
-        .then(result => {
-          const tbody = document.getElementById('reportTableBody');
-          tbody.innerHTML = '';
-          
-          if (result.status === 'success' && result.data.length > 0) {
-            result.data.reverse().forEach(row => {
-              tbody.innerHTML += `<tr>
-                <td>${row.date}</td>
-                <td>${row.location}</td>
-                <td>${row.workType}</td>
-                <td>${row.description}</td>
-                <td>${row.inspector}</td>
-              </tr>`;
-            });
-          } else {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">ยังไม่มีข้อมูลรายงาน</td></tr>`;
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('reportTableBody').innerHTML = `<tr><td colspan="5" style="text-align: center; color:red;">โหลดข้อมูลไม่สำเร็จ</td></tr>`;
-        });
+    <!-- ค้นหา / รายงาน -->
+    <section class="tab" id="tab-report">
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">ค้นหาและรายงานข้อมูลสุขภาพนักเรียน</h3><div><button class="btn" id="btnRepXlsx">ส่งออก Excel</button> <button class="btn" id="btnRepCsv">ส่งออก CSV</button> <button class="btn" id="btnRepPrint">พิมพ์</button></div></div>
+        <div class="fields">
+          <div><label>ค้นหา (ชื่อ / ชื่อเล่น / รหัส)</label><input id="rp_q" placeholder="พิมพ์เพื่อค้นหา"></div>
+          <div><label>ห้อง</label><select id="rp_room"></select></div>
+          <div><label>ภาวะโภชนาการ</label><select id="rp_nut"></select></div>
+          <div><label>เพศ</label><select id="rp_g"><option value="">ทุกเพศ</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select></div>
+        </div>
+        <div class="hint" id="rp_cap" style="margin-top:8px"></div>
+      </div>
+      <div class="cards" id="rp_cards"></div>
+      <div class="card"><h3>สรุปรายห้อง (ตามเงื่อนไขที่กรอง)</h3><div class="scroll"><table class="mini" id="rp_sum"></table></div></div>
+      <div class="card"><h3>รายชื่อนักเรียน</h3><div class="scroll"><table class="mini" id="rp_tbl"></table></div></div>
+    </section>
+
+    <!-- ผู้ใช้งาน (Admin) -->
+    <section class="tab" id="tab-users">
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">บัญชีผู้ใช้งาน (ครู / ผู้อำนวยการ)</h3><button class="btn pri" id="btnNewUser">+ สร้างบัญชี</button></div>
+        <p class="hint" style="margin-top:0">Admin เป็นผู้สร้างบัญชีและกำหนด PIN 6 หลักให้ผู้ใช้แต่ละคน (ไม่มีการสมัครเอง) · ครูเข้าถึงได้เฉพาะห้องที่ติ๊กไว้ · ผู้อำนวยการดูได้ทุกห้องแต่แก้ไขไม่ได้ · กรอก PIN ผิด 5 ครั้งติดกันบัญชีจะถูกล็อก ต้องให้ Admin กด "ปลดล็อก"</p>
+        <div id="userNote"></div>
+        <div class="scroll"><table class="edt" id="userTbl"><thead><tr><th style="width:130px">Username</th><th>ชื่อที่แสดง</th><th style="width:100px">บทบาท</th><th>ห้องที่เข้าถึงได้</th><th style="width:150px">สถานะ</th><th style="width:150px">เข้าสู่ระบบล่าสุด</th><th style="width:240px"></th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="card" id="userForm" style="display:none">
+        <div class="bar"><h3 style="margin:0" id="uf_title">สร้างบัญชีใหม่</h3></div>
+        <div class="fields">
+          <div><label>Username (a-z ตัวเลข . _ -)</label><input id="uf_user" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+          <div><label>ชื่อที่แสดง</label><input id="uf_name" maxlength="80" autocomplete="off"></div>
+          <div><label>บทบาท</label><select id="uf_role"><option value="teacher">ครู (แก้ไขได้เฉพาะห้องที่กำหนด)</option><option value="director">ผู้อำนวยการ (ดูได้ทุกห้อง ห้ามแก้ไข)</option></select></div>
+          <div><label id="uf_pinlbl">PIN 6 หลัก (ตัวเลข)</label><div style="display:flex;gap:6px"><input id="uf_pin" inputmode="numeric" maxlength="6" autocomplete="off"><button class="btn" id="btnGenPin" type="button" style="white-space:nowrap">สุ่ม PIN</button></div></div>
+        </div>
+        <div id="uf_roomsWrap" style="margin-top:12px"><label style="display:block;font-size:13px;color:var(--muted);margin-bottom:4px">ห้องที่ครูคนนี้เข้าถึงได้ (เลือกได้หลายห้อง)</label><div id="uf_rooms"></div></div>
+        <div class="bar" style="margin-top:12px"><span></span><div><button class="btn" id="btnUserCancel">ยกเลิก</button> <button class="btn pri" id="btnUserSave">บันทึกบัญชี</button></div></div>
+      </div>
+    </section>
+
+    <!-- ตั้งค่า -->
+    <section class="tab" id="tab-settings">
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">ข้อมูลโรงเรียนและผู้ลงนาม</h3><button class="btn pri" id="btnSaveSettings">บันทึกการตั้งค่า</button></div>
+        <div class="fields">
+          <div><label>ชื่อโรงเรียน</label><input id="set_schoolName"></div>
+          <div><label>ปีการศึกษา (พ.ศ.)</label><input id="set_academicYear" type="number"></div>
+          <div><label>เดือนที่เริ่มปีการศึกษา</label><select id="set_startMonth"></select></div>
+          <div style="display:none"><select id="set_currentMonth"></select></div>
+          <div><label>ชื่อ-สกุล ผู้อำนวยการ</label><input id="set_directorName"></div>
+          <div><label>ตำแหน่งผู้อำนวยการ</label><input id="set_directorPos"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">ห้องเรียนและครูประจำชั้น</h3><div><button class="btn" id="btnAddRoom">+ เพิ่มห้อง</button> <button class="btn pri" id="btnSaveRooms">บันทึกห้องเรียน</button></div></div>
+        <table class="edt" id="roomTbl"><thead><tr><th style="width:100px">ระดับชั้น</th><th style="width:120px">เลขห้อง (เว้นว่างได้)</th><th style="width:230px">ชื่อเต็ม (อัตโนมัติ)</th><th>ชื่อ-สกุล ครูประจำชั้น</th><th style="width:260px">ตำแหน่ง</th><th style="width:44px"></th></tr></thead><tbody></tbody></table>
+        <p class="hint">เลือกระดับชั้นแล้วชื่อเต็มขึ้นให้เอง (เช่น อ.2 → ชั้นอนุบาลปีที่ 2) ถ้ามีหลายห้องในชั้นเดียวกัน ใส่เลขห้อง เช่น 1, 2 (ป.3/1, ป.3/2) · ระดับชั้นใช้เลือกตารางเกณฑ์โภชนาการ: อ.1–อ.3 ใช้เกณฑ์อายุ 2–5 ปี (ส่วนสูง 65–140 ซม.) · ป.1–ป.6 ใช้เกณฑ์อายุ 6–19 ปี (ส่วนสูง 90–185 ซม.) · ห้องที่ยังมีนักเรียนอยู่ลบไม่ได้ · ผู้อำนวยการและชื่อโรงเรียนใช้ร่วมกันทุกห้อง</p>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">เลื่อนชั้นสู่ปีการศึกษาใหม่</h3><button class="btn" id="btnPromote">ตรวจดูการเลื่อนชั้น</button></div>
+        <p class="hint" style="margin-top:0">ใช้ครั้งเดียวเมื่อขึ้นปีการศึกษาใหม่: ปีการศึกษา +1 กลับไปเดือนเริ่มต้น และระดับชั้นของทุกห้องขยับขึ้น 1 ชั้น (อ.3 → ป.1) นักเรียนอยู่ห้องเดิม ข้อมูลปีเก่ายังอยู่ในชีต เลือกปีการศึกษาย้อนดูได้ (แสดงเฉพาะนักเรียนที่ยังอยู่ในรายชื่อ)</p>
+        <div id="promoteBox"></div>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">นำเข้ารายชื่อนักเรียน (CSV / Excel / วางจาก Excel)</h3><button class="btn" id="btnTemplate">ดาวน์โหลดแบบฟอร์ม (CSV)</button></div>
+        <p class="hint" style="margin-top:0">แถวแรกต้องเป็นหัวคอลัมน์ ลำดับคอลัมน์ไม่ต้องตรงกัน ต้องมีอย่างน้อย <b>ชื่อ-สกุล</b> (หรือแยกเป็น คำนำหน้า / ชื่อ / นามสกุล) · ไม่บังคับ: ชื่อเล่น, รหัสประจำตัว, เพศ, วันเกิด, น้ำหนัก, ส่วนสูง, หมายเหตุ, <b>ห้อง</b> (ถ้ามีคอลัมน์ห้อง ระบบแยกเข้าห้องให้เอง ถ้าไม่มีจะเข้าห้องที่เลือกอยู่ด้านบน) · น้ำหนัก/ส่วนสูงจะบันทึกลงเดือน-ปีที่เลือกอยู่ · ไม่ลบนักเรียนที่มีอยู่แล้ว (ชื่อหรือรหัสซ้ำ = อัปเดต)</p>
+        <div class="bar"><input type="file" id="impFile" accept=".csv,.txt,.xlsx,.xls"><span class="hint">หรือคัดลอกจาก Excel มาวางในช่องด้านล่าง</span></div>
+        <textarea class="imp-box" id="impText" placeholder="วางข้อมูลที่นี่ (รวมแถวหัวคอลัมน์)"></textarea>
+        <div class="bar" style="margin-top:8px"><button class="btn" id="btnImpCheck">ตรวจสอบข้อมูล</button><button class="btn pri" id="btnImpGo" disabled>ยืนยันนำเข้า</button></div>
+        <div id="impPreview"></div>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0" id="rosterTitle">รายชื่อนักเรียน</h3><div><button class="btn" id="btnAddStu">+ เพิ่มนักเรียน</button> <button class="btn pri" id="btnSaveRoster">บันทึกรายชื่อ</button></div></div>
+        <div class="scroll"><table class="edt" id="rosterTbl"><thead><tr><th style="width:44px">ที่</th><th style="width:110px">รหัส</th><th>ชื่อ - สกุล</th><th style="width:110px">ชื่อเล่น</th><th style="width:90px">เพศ</th><th style="width:150px">วันเกิด</th><th style="width:44px"></th></tr></thead><tbody></tbody></table></div>
+        <p class="hint">รหัสประจำตัวใช้เชื่อมข้อมูลแต่ละเดือนเข้ากับนักเรียน หากเว้นว่างระบบจะกำหนดให้ และไม่ควรเปลี่ยนรหัสหลังเริ่มบันทึกแล้ว</p>
+      </div>
+      <div class="card">
+        <div class="bar"><h3 style="margin:0">วันหยุด</h3><div><button class="btn" id="btnFixedHol">เติมวันหยุดวันที่ตายตัว</button> <button class="btn" id="btnAddHol">+ เพิ่มวันหยุด</button> <button class="btn pri" id="btnSaveHol">บันทึกวันหยุด</button></div></div>
+        <table class="edt" id="holTbl"><thead><tr><th style="width:160px">วันที่</th><th>ชื่อวันหยุด</th><th style="width:150px">เปิดสอนพิเศษ</th><th style="width:44px"></th></tr></thead><tbody></tbody></table>
+        <p class="hint">ปุ่ม "เติมวันหยุดวันที่ตายตัว" เติมเฉพาะวันที่ไม่เปลี่ยนทุกปี ไม่รวมวันหยุดชดเชยและวันตามจันทรคติ (มาฆบูชา วิสาขบูชา ฯลฯ) ต้องเพิ่มเอง · วันหยุดจะแสดงเป็นแถบเทาในตาราง (ยังติ๊กได้) ส่วนเสาร์-อาทิตย์เป็นสีเทาอ่อนอัตโนมัติ</p>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="printRoot"></div>
+<div id="loading">กำลังทำงาน...</div>
+<div id="topbar"></div>
+<div id="toast"></div>
+
+<script>
+// ⚠️ ระบุ URL ของ Google Apps Script Web App ที่ Deploy สิทธิ์เป็น Anyone
+var GAS_URL = "https://script.google.com/macros/s/AKfycbz9_ra_adtaroHP9UFJjsKNO9YOY7cRIaXfjBsadUtSZR3R4BcYxhr1npdm7JOgtUN4Gg/exec";
+
+var TH_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+var TH_DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+var MIN_ROWS=15;
+var DISEASES={tb:'วัณโรค',dm:'เบาหวาน',ep:'ลมบ้าหมู',hd:'หัวใจ',ca:'มะเร็ง'};
+var VACC={dip:'คอตีบ',rub:'หัดเยอรมัน',per:'ไอกรน',tet:'บาดทะยัก',pol:'โปลิโอ',hep:'ตับอักเสบ',bcg:'บีซีจี'};
+function newState(){return {me:null,ref:{},settings:{},rooms:[],room:'',allStudents:[],critAll:{},students:[],holidayList:[],holidays:{},crit:{},years:[],period:{year:0,month:1},
+  data:{milk:{},brush:{},health:{},check:{}},dirty:{milk:false,brush:false,health:false,check:false},
+  tab:'dash',sub:'milk',indivId:null,indivDirty:false,indivSeq:0,charts:{},
+  base:{milk:{},brush:{},health:{},check:{}},ver:{milk:0,brush:0,health:0,check:0},saving:{milk:false,brush:false,health:false,check:false},
+  indivSaving:false,revs:{},pcache:{},pseq:0,icache:{},rosterDirty:false};}
+var S=newState();
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad(n){return n<10?'0'+n:''+n;}
+function errMsg(e){return (e&&e.message)?e.message:String(e);}
+
+var busyCount=0;
+function busy(on){busyCount+=on?1:-1;if(busyCount<0)busyCount=0;$('loading').style.display=busyCount>0?'flex':'none';}
+
+/* ---------- ระบบรับ-ส่งข้อมูลกับ GAS ผ่าน FETCH (สำหรับ Vercel) ---------- */
+function callGasApi(tok, fn, args) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: tok, fn: fn, args: args })
+  })
+  .then(function(res){ return res.json(); });
+}
+
+function api(fn){
+  var args=Array.prototype.slice.call(arguments,1);
+  busy(true);
+  return new Promise(function(res,rej){
+    var tok=AUTHST.token;
+    callGasApi(tok, fn, args).then(function(x){
+      busy(false);
+      if(x&&x.ok){res(x.data);return;}
+      var msg=(x&&x.message)||'เกิดข้อผิดพลาด',code=(x&&x.code)||'ERR';
+      if(code==='AUTH'&&tok&&tok===AUTHST.token)forceLogout(msg);
+      var er=new Error(msg);er.code=code;rej(er);
+    }).catch(function(e){busy(false);rej(e);});
+  });
+}
+
+var bgCount=0;
+function bgBar(on){bgCount+=on?1:-1;if(bgCount<0)bgCount=0;var t=$('topbar');if(t)t.className=bgCount>0?'on':'';}
+function rpcBg(bar,fn,args){
+  if(bar)bgBar(true);
+  return new Promise(function(res,rej){
+    var tok=AUTHST.token,done=false;
+    var tm=setTimeout(function(){if(done)return;done=true;if(bar)bgBar(false);var er=new Error('เซิร์ฟเวอร์ตอบช้าเกินกำหนด (ยังไม่ยืนยันผล) — ข้อมูลที่กรอกยังอยู่ กดบันทึกซ้ำได้อย่างปลอดภัย');er.code='TIMEOUT';rej(er);},60000);
+    callGasApi(tok, fn, args).then(function(x){
+      if(done)return;done=true;clearTimeout(tm);if(bar)bgBar(false);
+      if(x&&x.ok){res(x.data);return;}
+      var msg=(x&&x.message)||'เกิดข้อผิดพลาด',code=(x&&x.code)||'ERR';
+      if(code==='AUTH'&&tok&&tok===AUTHST.token)forceLogout(msg);
+      var er=new Error(msg);er.code=code;rej(er);
+    }).catch(function(e){if(done)return;done=true;clearTimeout(tm);if(bar)bgBar(false);rej(e);});
+  });
+}
+function apiBg(fn){return rpcBg(true,fn,Array.prototype.slice.call(arguments,1));}
+function apiQuiet(fn){return rpcBg(false,fn,Array.prototype.slice.call(arguments,1));}
+function cloneJ(x){return JSON.parse(JSON.stringify(x));}
+var toastTimer=null;
+function toast(msg,err){var t=$('toast');t.textContent=msg;t.className=err?'err':'';t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.style.display='none';},err?5000:2200);}
+
+/* ---------- ระบบเข้าสู่ระบบ / สิทธิ์ / Session ---------- */
+var AUTHST={token:null,idleSec:1800,lastAct:0,lastPing:0,timer:null};
+var UIBOUND=false,HELLO=null;
+function RO(){return !!(S.me&&S.me.readOnly);}
+function dis(){return RO()?' disabled':'';}
+function showEl(el,on){if(typeof el==='string')el=$(el);if(el)el.style.display=on?'':'none';}
+function roleLabel(r){return r==='admin'?'ผู้ดูแลระบบ':(r==='director'?'ผู้อำนวยการ':'ครู');}
+function markAct(){AUTHST.lastAct=Date.now();}
+['pointerdown','keydown','input','wheel','touchstart'].forEach(function(ev){window.addEventListener(ev,markAct,{passive:true,capture:true});});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)idleTick();});
+
+function startIdleTimer(){stopIdleTimer();markAct();AUTHST.lastPing=Date.now();AUTHST.timer=setInterval(idleTick,10000);}
+function stopIdleTimer(){if(AUTHST.timer){clearInterval(AUTHST.timer);AUTHST.timer=null;}}
+function idleTick(){
+  if(!AUTHST.token)return;
+  var now=Date.now(),lim=(AUTHST.idleSec-15)*1000;
+  if(now-AUTHST.lastAct>lim){forceLogout('ออกจากระบบอัตโนมัติ เพราะไม่มีการใช้งานนานเกินกำหนด กรุณาเข้าสู่ระบบใหม่');return;}
+  if(AUTHST.lastAct>AUTHST.lastPing&&now-AUTHST.lastPing>240000){AUTHST.lastPing=now;pingQuiet();}
+}
+function pingQuiet(){
+  var tok=AUTHST.token;if(!tok)return;
+  try{callGasApi(tok, 'ping', []).then(function(x){
+    if(x&&!x.ok&&x.code==='AUTH'&&tok===AUTHST.token)forceLogout(x.message||'หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่');
+  }).catch(function(){});}catch(e){}
+}
+
+function wipeUI(){
+  stopIdleTimer();
+  try{['nutri','routine','growth'].forEach(killChart);}catch(e){}
+  S=newState();IMP.items=[];UM.users=[];UM.rooms=[];UM.edit=null;UM.loaded=false;
+  document.querySelectorAll('#appUI table.sheet').forEach(function(t){t.innerHTML='';});
+  document.querySelectorAll('#appUI table.edt tbody,#appUI table.mini').forEach(function(t){t.innerHTML='';});
+  ['dashCards','critBanner','impPreview','promoteBox','rp_cards','rp_sum','userNote'].forEach(function(id){var e=$(id);if(e)e.innerHTML='';});
+  ['selRoom','selIndiv','selGrowth','selYear','selMonth','rp_room'].forEach(function(id){var e=$(id);if(e)e.innerHTML='';});
+  document.querySelectorAll('#appUI input:not([type=checkbox]):not([type=radio]),#appUI textarea').forEach(function(e){if(e.type!=='file')e.value='';else{try{e.value='';}catch(x){}}});
+  try{fillForm({});}catch(e){}
+  $('printRoot').innerHTML='';$('schoolTitle').textContent='กำลังโหลด...';$('classSub').textContent='';$('whoName').textContent='';
+  showEl('userForm',false);
+}
+function showLogin(msg,err,keepFields){
+  showEl('appUI',false);showEl('loginView',true);if(!keepFields)$('lgPin').value='';
+  lgMsg(msg||'',!!err);
+  var h=HELLO||{},isA=!!(h.google&&h.google.isAdmin);
+  showEl('lgAdmin',isA);$('lgAdminMail').textContent=isA?h.google.email:'';
+  $('lgNote').textContent=(h.adminConfigured===false)?'ระบบยังไม่ได้ตั้งผู้ดูแลระบบ: เจ้าของไฟล์ Google Sheet ต้องเลือกเมนู "ระบบบันทึกสุขภาพ > 1) ตั้งค่าความปลอดภัย" ก่อน':'';
+  if(!keepFields)setTimeout(function(){try{$('lgUser').focus();}catch(e){}},50);
+}
+function lgMsg(msg,err){var m=$('lgMsg');m.textContent=msg||'';m.className='banner'+(err?' bad':'');m.style.display=msg?'':'none';}
+function forceLogout(msg){
+  if(!AUTHST.token&&$('loginView').style.display!=='none')return;
+  AUTHST.token=null;wipeUI();showLogin(msg||'หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่',true);
+}
+function doLogout(){
+  if((anyDirty()||S.indivDirty||S.rosterDirty||anySaving())&&!confirm('มีข้อมูลที่ยังไม่ได้บันทึก (หรือกำลังบันทึกอยู่) ออกจากระบบและทิ้งข้อมูลนี้หรือไม่?'))return;
+  var tok=AUTHST.token;AUTHST.token=null;
+  try{callGasApi(tok, 'logout', []).then(function(){}).catch(function(){});}catch(e){}
+  wipeUI();showLogin('ออกจากระบบเรียบร้อยแล้ว',false);
+}
+async function doLogin(e){
+  if(e)e.preventDefault();
+  var u=$('lgUser').value.trim().toLowerCase(),p=$('lgPin').value;
+  if(!u||!/^[0-9]{6}$/.test(p)){lgMsg('กรอก Username และ PIN ตัวเลข 6 หลักให้ครบ',true);return;}
+  $('lgGo').disabled=true;
+  try{var d=await api('login',u,p);$('lgUser').value='';$('lgPin').value='';await afterLogin(d);}
+  catch(er){$('lgPin').value='';lgMsg(errMsg(er),true);}
+  finally{$('lgGo').disabled=false;}
+}
+async function doAdminLogin(){
+  $('lgAdminBtn').disabled=true;
+  try{var d=await api('adminEnter');await afterLogin(d);}
+  catch(er){lgMsg(errMsg(er),true);}
+  finally{$('lgAdminBtn').disabled=false;}
+}
+async function afterLogin(d){
+  AUTHST.token=d.token;AUTHST.idleSec=d.idleSec||1800;S.me=d.me;
+  showEl('loginView',false);showEl('appUI',true);startIdleTimer();
+  await startApp();
+}
+function applyRole(){
+  var m=S.me,ro=m.readOnly,adm=m.role==='admin';
+  document.body.classList.toggle('ro',ro);
+  $('whoName').textContent=(adm?(m.email||'Admin'):(m.name||m.username))+' · '+roleLabel(m.role)+(ro?' (ดูอย่างเดียว)':'');
+  document.querySelectorAll('#tab-daily .bar > div > .hint').forEach(function(e){e.style.display=ro?'none':'';});
+  var tabs={settings:!ro,users:adm};
+  document.querySelectorAll('#mainTabs button').forEach(function(b){
+    var t=b.getAttribute('data-tab');if(tabs.hasOwnProperty(t))b.style.display=tabs[t]?'':'none';
+  });
+  var sb=document.querySelector('#mainTabs [data-tab=settings]');if(sb)sb.textContent=adm?'ตั้งค่า':'รายชื่อนักเรียน';
+  ['btnSaveSettings','btnSaveRooms','btnPromote','btnSaveHol'].forEach(function(id){var c=$(id).closest('.card');if(c)c.style.display=adm?'':'none';});
+  ['btnSave-milk','btnSave-brush','btnSave-health','btnSave-check','btnSave-indiv','btnClear-indiv'].forEach(function(id){showEl(id,!ro);});
+  S.tab='dash';
+  document.querySelectorAll('#mainTabs button').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-tab')==='dash');});
+  document.querySelectorAll('section.tab').forEach(function(x){x.classList.toggle('on',x.id==='tab-dash');});
+}
+
+/* ---------- เริ่มระบบ ---------- */
+window.addEventListener('load',init);
+async function init(){
+  showEl('appUI',false);showEl('loginView',true);
+  $('lgForm').addEventListener('submit',doLogin);
+  $('lgAdminBtn').addEventListener('click',doAdminLogin);
+  $('btnLogout').addEventListener('click',doLogout);
+  try{HELLO=await api('hello');showLogin('',false,true);}
+  catch(e){showLogin('เชื่อมต่อระบบไม่สำเร็จ: '+errMsg(e),true,true);}
+}
+async function startApp(){
+  var b;
+  try{b=await api('getBootstrap',true);}catch(e){if(AUTHST.token)forceLogout('โหลดข้อมูลไม่สำเร็จ: '+errMsg(e));return;}
+  S.me=b.me||S.me;S.revs=b.revs||{};
+  applyBootstrap(b);applyRole();
+  S.period=b.p0||todayPeriod();
+  if(!UIBOUND){bindUI();UIBOUND=true;}
+  buildPeriodSelectors();
+  renderSettings();
+  if(b.period){S.pcache[pkey(S.period.year,S.period.month)]={d:b.period,t:Date.now()};applyPeriod(b.period);prefetchAdj();}
+  else await loadPeriod();
+  populateIndivSelect();
+  populateGrowthSelect();
+  buildReportFilters();
+}
+
+/* ---------- ค้นหา / รายงาน (ทุกห้องที่มีสิทธิ์) ---------- */
+var NUT_FILTERS=[['all','ทุกภาวะ'],['low','ต่ำกว่าเกณฑ์ (ผอม/ค่อนข้างผอม)'],['ok','ตามเกณฑ์ (สมส่วน)'],['high','เกินเกณฑ์ (ท้วม/เริ่มอ้วน/อ้วน)'],['vthin','ผอม'],['thin','ค่อนข้างผอม'],['plump','ท้วม'],['over','เริ่มอ้วน'],['obese','อ้วน'],['none','ยังไม่ได้ประเมิน']];
+function buildReportFilters(){
+  var cur=$('rp_room').value||'';
+  $('rp_room').innerHTML='<option value="">ทุกห้อง</option>'+S.rooms.map(function(r){return '<option value="'+esc(r.name)+'">'+esc(roomShort(r.name))+'</option>';}).join('');
+  $('rp_room').value=cur&&S.rooms.some(function(r){return r.name===cur;})?cur:'';
+  if(!$('rp_nut').options.length)$('rp_nut').innerHTML=NUT_FILTERS.map(function(f){return '<option value="'+f[0]+'">'+esc(f[1])+'</option>';}).join('');
+}
+function reportRows(){
+  var mi=monthInfo(),q=$('rp_q').value.trim().toLowerCase(),rf=$('rp_room').value,nf=$('rp_nut').value||'all',gf=$('rp_g').value,rows=[];
+  S.allStudents.forEach(function(st){
+    var rm=S.rooms.filter(function(r){return r.name===st.room;})[0];if(!rm)return;
+    var v=S.data.health[st.id]||{},crit=S.critAll[bandOf(rm.level)]||{};
+    var s=evalNutrition(st,v.w,v.h,crit),g=normG(st.gender);
+    if(rf&&st.room!==rf)return;
+    if(gf&&g!==gf)return;
+    if(q&&(st.name+' '+(st.nickname||'')+' '+st.id).toLowerCase().indexOf(q)<0)return;
+    var isN=!!NUTRI[s];
+    if(nf==='low'&&!(s==='vthin'||s==='thin'))return;
+    if(nf==='ok'&&s!=='ok')return;
+    if(nf==='high'&&!(s==='plump'||s==='over'||s==='obese'))return;
+    if(NUTRI[nf]&&s!==nf)return;
+    if(nf==='none'&&isN)return;
+    rows.push({st:st,room:st.room,g:g,w:v.w,h:v.h,s:s,mk:countValid(S.data.milk[st.id]||[],mi.days),bk:countValid(S.data.brush[st.id]||[],mi.days)});
+  });
+  return rows;
+}
+function renderReport(){
+  if(!S.me)return;
+  var mi=monthInfo(),rows=reportRows(),n=rows.length,c={vthin:0,thin:0,ok:0,plump:0,over:0,obese:0},tm=0,tb=0;
+  rows.forEach(function(r){if(c[r.s]!==undefined)c[r.s]++;tm+=r.mk;tb+=r.bk;});
+  $('rp_cap').textContent='ข้อมูล '+periodLabel()+' · วันเรียน '+mi.school+' วัน · พบ '+n+' คน (เปลี่ยนเดือน/ปีได้ที่แถบด้านบน)';
+  var avg=function(t){return n?(t/n).toFixed(1):'0';};
+  $('rp_cards').innerHTML='<div class="stat"><small>พบทั้งหมด</small><b>'+n+'</b></div>'+
+    '<div class="stat"><small>ตามเกณฑ์</small><b style="color:var(--ok)">'+c.ok+'</b></div>'+
+    '<div class="stat"><small>ต่ำกว่าเกณฑ์</small><b style="color:var(--warn)">'+(c.vthin+c.thin)+'</b></div>'+
+    '<div class="stat"><small>เกินเกณฑ์</small><b>'+(c.plump+c.over+c.obese)+'</b></div>'+
+    '<div class="stat"><small>ดื่มนมเฉลี่ย (วัน)</small><b>'+avg(tm)+'</b></div>'+
+    '<div class="stat"><small>แปรงฟันเฉลี่ย (วัน)</small><b>'+avg(tb)+'</b></div>';
+  var h='<thead><tr><th>ห้อง</th><th>เลขที่</th><th>ชื่อ – สกุล</th><th>เพศ</th><th>น้ำหนัก</th><th>ส่วนสูง</th><th>ภาวะโภชนาการ</th><th>นม</th><th>แปรงฟัน</th></tr></thead><tbody>';
+  rows.slice(0,1500).forEach(function(r){
+    h+='<tr><td>'+esc(r.room)+'</td><td>'+r.st.no+'</td><td>'+esc(r.st.name)+'</td><td>'+esc(r.g)+'</td><td>'+(r.w===undefined||r.w===''?'':esc(r.w))+'</td><td>'+(r.h===undefined||r.h===''?'':esc(r.h))+'</td><td>'+esc(statusText(r.s))+'</td><td>'+r.mk+'</td><td>'+r.bk+'</td></tr>';
+  });
+  if(!n)h+='<tr><td colspan="9" class="hint" style="padding:16px">ไม่พบข้อมูลตามเงื่อนไข</td></tr>';
+  $('rp_tbl').innerHTML=h+'</tbody>';
+  var by={};rows.forEach(function(r){var o=by[r.room]||(by[r.room]={n:0,low:0,ok:0,hi:0,mk:0,bk:0});o.n++;if(r.s==='vthin'||r.s==='thin')o.low++;else if(r.s==='ok')o.ok++;else if(r.s==='plump'||r.s==='over'||r.s==='obese')o.hi++;o.mk+=r.mk;o.bk+=r.bk;});
+  var sh='<thead><tr><th>ห้อง</th><th>นักเรียน</th><th>ตามเกณฑ์</th><th>ต่ำกว่าเกณฑ์</th><th>เกินเกณฑ์</th><th>นมเฉลี่ย</th><th>แปรงฟันเฉลี่ย</th></tr></thead><tbody>';
+  S.rooms.forEach(function(rm){var o=by[rm.name];if(!o)return;sh+='<tr><td>'+esc(roomShort(rm.name))+'</td><td>'+o.n+'</td><td>'+o.ok+'</td><td>'+o.low+'</td><td>'+o.hi+'</td><td>'+(o.mk/o.n).toFixed(1)+'</td><td>'+(o.bk/o.n).toFixed(1)+'</td></tr>';});
+  $('rp_sum').innerHTML=sh+'</tbody>';
+}
+function reportMatrix(){
+  var out=[['ห้อง','เลขที่','รหัสประจำตัว','ชื่อ-สกุล','ชื่อเล่น','เพศ','น้ำหนัก (กก.)','ส่วนสูง (ซม.)','ภาวะโภชนาการ','ดื่มนม (วัน)','แปรงฟัน (วัน)','ปีการศึกษา','เดือน']];
+  reportRows().forEach(function(r){out.push([r.room,r.st.no,r.st.id,r.st.name,r.st.nickname||'',r.g,(r.w===undefined?'':r.w),(r.h===undefined?'':r.h),statusText(r.s),r.mk,r.bk,S.period.year,TH_MONTHS[S.period.month-1]]);});
+  return out;
+}
+function csvSafe(v){v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+function saveBlob(blob,name){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);}
+function exportCsv(){
+  var m=reportMatrix();if(m.length<2){toast('ไม่มีข้อมูลให้ส่งออก',true);return;}
+  saveBlob(new Blob(['﻿'+m.map(function(r){return r.map(csvSafe).join(',');}).join('\r\n')],{type:'text/csv;charset=utf-8'}),'รายงานสุขภาพนักเรียน_'+S.period.year+'-'+pad(S.period.month)+'.csv');
+}
+function exportXlsx(){
+  var m=reportMatrix();if(m.length<2){toast('ไม่มีข้อมูลให้ส่งออก',true);return;}
+  if(typeof XLSX==='undefined'){toast('โหลดตัวสร้าง Excel ไม่สำเร็จ — ใช้ส่งออก CSV แทน',true);return;}
+  try{var ws=XLSX.utils.aoa_to_sheet(m),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'รายงาน');XLSX.writeFile(wb,'รายงานสุขภาพนักเรียน_'+S.period.year+'-'+pad(S.period.month)+'.xlsx');}
+  catch(e){toast('ส่งออก Excel ไม่สำเร็จ ('+errMsg(e)+') — ใช้ CSV แทน',true);}
+}
+function printReport(){
+  var rows=reportRows();if(!rows.length){toast('ไม่มีข้อมูลให้พิมพ์',true);return;}
+  var h='<div class="p-title">รายงานสุขภาพและกิจวัตรประจำวันนักเรียน</div><div class="p-sub">'+esc(S.settings.schoolName||'')+' ประจำเดือน '+TH_MONTHS[S.period.month-1]+' ปีการศึกษา '+S.period.year+' · '+rows.length+' คน</div>'+
+    '<table class="ptable"><colgroup><col style="width:16mm"><col style="width:12mm"><col><col style="width:14mm"><col style="width:20mm"><col style="width:20mm"><col style="width:34mm"><col style="width:16mm"><col style="width:18mm"></colgroup><thead><tr><th>ห้อง</th><th>เลขที่</th><th>ชื่อ – สกุล</th><th>เพศ</th><th>น้ำหนัก<br>(กก.)</th><th>ส่วนสูง<br>(ซม.)</th><th>ภาวะโภชนาการ</th><th>นม<br>(วัน)</th><th>แปรงฟัน<br>(วัน)</th></tr></thead><tbody>';
+  rows.forEach(function(r){h+='<tr><td>'+esc(r.room)+'</td><td>'+r.st.no+'</td><td class="nm">'+esc(r.st.name)+'</td><td>'+esc(r.g)+'</td><td>'+(r.w===undefined||r.w===''?'':esc(r.w))+'</td><td>'+(r.h===undefined||r.h===''?'':esc(r.h))+'</td><td>'+esc(statusText(r.s))+'</td><td>'+r.mk+'</td><td>'+r.bk+'</td></tr>';});
+  doPrint(h+'</tbody></table>','landscape');
+}
+
+/* ---------- จัดการผู้ใช้งาน (เฉพาะ Admin) ---------- */
+var UM={users:[],rooms:[],edit:null};
+function pinBad(p){
+  if(!/^[0-9]{6}$/.test(p))return 'PIN ต้องเป็นตัวเลข 6 หลักพอดี';
+  if(/^(\d)\1{5}$/.test(p))return 'PIN ง่ายเกินไป (เลขซ้ำกันทั้ง 6 หลัก)';
+  if('0123456789'.indexOf(p)>=0||'9876543210'.indexOf(p)>=0)return 'PIN ง่ายเกินไป (เลขเรียงกัน)';
+  return '';
+}
+function genPin(){
+  for(var i=0;i<60;i++){var a=new Uint32Array(1);crypto.getRandomValues(a);var p=String(a[0]%1000000);while(p.length<6)p='0'+p;if(!pinBad(p))return p;}
+  return '';
+}
+function statusLabel(s){return s==='active'?'ใช้งานได้':(s==='locked'?'ถูกล็อก (PIN ผิดเกินกำหนด)':'ปิดใช้งาน');}
+async function loadUsers(){
+  if(UM.loaded)renderUsers();
+  try{var d=await apiBg('listUsers');UM.users=d.users;UM.rooms=d.rooms;UM.loaded=true;renderUsers();}
+  catch(e){toast('โหลดรายชื่อผู้ใช้ไม่สำเร็จ: '+errMsg(e),true);}
+}
+function renderUsers(){
+  var h=UM.users.map(function(u){
+    var rooms=u.role==='director'?'ทุกห้อง (ดูอย่างเดียว)':(u.rooms.length?u.rooms.map(function(n){return roomShort(n);}).join(', '):'— ไม่มีสิทธิ์ห้องใด —');
+    var st=u.status;
+    return '<tr data-u="'+esc(u.username)+'"><td data-l="Username"><b>'+esc(u.username)+'</b></td><td data-l="ชื่อที่แสดง">'+esc(u.name)+'</td><td data-l="บทบาท">'+(u.role==='director'?'ผู้อำนวยการ':'ครู')+'</td><td class="full" data-l="ห้องที่เข้าถึงได้">'+esc(rooms)+'</td>'+
+      '<td data-l="สถานะ"><span style="color:'+(st==='active'?'var(--ok)':'var(--warn)')+';font-weight:600">'+statusLabel(st)+'</span></td><td data-l="เข้าสู่ระบบล่าสุด">'+esc(u.lastLogin||'-')+'</td>'+
+      '<td class="full" style="white-space:nowrap"><button class="btn sm" data-act="edit">แก้ไข / ตั้ง PIN ใหม่</button> '+
+      (st==='active'?'<button class="btn sm" data-act="disable">ปิดใช้งาน</button>':'<button class="btn sm" data-act="enable">'+(st==='locked'?'ปลดล็อก':'เปิดใช้งาน')+'</button>')+' <button class="btn sm" data-act="delete" style="color:var(--warn)">ลบบัญชี</button></td></tr>';
+  }).join('');
+  if(!UM.users.length)h='<tr><td colspan="7" class="hint" style="padding:16px">ยังไม่มีบัญชีผู้ใช้ — กด "+ สร้างบัญชี" เพื่อสร้างบัญชีครูหรือผู้อำนวยการ</td></tr>';
+  $('userTbl').querySelector('tbody').innerHTML=h;
+}
+function openUserForm(u){
+  UM.edit=u||null;$('userNote').innerHTML='';
+  $('uf_title').textContent=u?('แก้ไขบัญชี '+u.username):'สร้างบัญชีใหม่';
+  $('uf_user').value=u?u.username:'';$('uf_user').disabled=!!u;
+  $('uf_name').value=u?u.name:'';$('uf_role').value=u?u.role:'teacher';$('uf_pin').value='';
+  $('uf_pinlbl').textContent=u?'PIN ใหม่ (เว้นว่าง = ไม่เปลี่ยน PIN เดิม)':'PIN 6 หลัก (ตัวเลข)';
+  $('uf_rooms').innerHTML=UM.rooms.map(function(r){return '<label class="rchk"><input type="checkbox" value="'+esc(r.name)+'"'+(u&&u.rooms.indexOf(r.name)>=0?' checked':'')+'> '+esc(r.full)+'</label>';}).join('')||'<span class="hint">ยังไม่มีห้องเรียน (สร้างที่แท็บ "ตั้งค่า")</span>';
+  onRoleChange();showEl('userForm',true);
+  try{$('userForm').scrollIntoView({block:'nearest'});}catch(e){}
+}
+function onRoleChange(){showEl('uf_roomsWrap',$('uf_role').value==='teacher');}
+async function saveUserUI(){
+  var o={isNew:!UM.edit,username:$('uf_user').value.trim().toLowerCase(),name:$('uf_name').value.trim(),role:$('uf_role').value,rooms:[],pin:$('uf_pin').value.trim()};
+  if(!/^[a-z0-9._-]{3,30}$/.test(o.username)){toast('Username ใช้ a-z ตัวเลข . _ - ยาว 3-30 ตัว',true);return;}
+  if(!o.name){toast('กรุณากรอกชื่อที่แสดง',true);return;}
+  if(o.role==='teacher'){
+    $('uf_rooms').querySelectorAll('input:checked').forEach(function(c){o.rooms.push(c.value);});
+    if(!o.rooms.length){toast('ครูต้องได้รับสิทธิ์อย่างน้อย 1 ห้อง',true);return;}
+  }
+  if(o.isNew||o.pin!==''){var pb=pinBad(o.pin);if(pb){toast(pb,true);return;}}
+  try{
+    var r=await api('saveUser',o);
+    if(r&&r.success){
+      UM.users=r.users;renderUsers();showEl('userForm',false);toast(r.message);
+      $('userNote').innerHTML=o.pin?'<div class="banner">บัญชี <b>'+esc(o.username)+'</b> · PIN ที่ตั้ง: <b style="font-size:18px;letter-spacing:2px">'+esc(o.pin)+'</b> — แจ้งผู้ใช้แล้วจดไว้ ระบบเก็บเฉพาะค่าเข้ารหัส จะไม่แสดง PIN นี้อีก</div>':'';
+      UM.edit=null;$('uf_pin').value='';
+    }else toast((r&&r.message)||'บันทึกไม่สำเร็จ',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
+}
+async function deleteUserUI(u){
+  var t=prompt('ลบบัญชี "'+u+'" ออกจากชีต "ผู้ใช้งาน" ถาวร?\n• ผู้ใช้นี้จะถูกออกจากระบบทันที และเข้าสู่ระบบอีกไม่ได้\n• ไม่กระทบข้อมูลนักเรียนและข้อมูลที่เคยบันทึก\n• ถ้าแค่ต้องการหยุดใช้งานชั่วคราว ให้กด "ปิดใช้งาน" แทน\n\nพิมพ์ชื่อผู้ใช้  '+u+'  เพื่อยืนยันการลบ');
+  if(t===null)return;
+  if(t.trim().toLowerCase()!==u){toast('ชื่อที่พิมพ์ไม่ตรง — ไม่ได้ลบบัญชี',true);return;}
+  try{var r=await api('deleteUser',u,t.trim());if(r&&r.success){UM.users=r.users;renderUsers();toast(r.message);}else toast((r&&r.message)||'ลบไม่สำเร็จ',true);}
+  catch(e){toast('ลบไม่สำเร็จ: '+errMsg(e),true);}
+}
+async function setUserStatusUI(u,status){
+  if(status==='disabled'&&!confirm('ปิดใช้งานบัญชี "'+u+'" ? (ผู้ใช้ที่ล็อกอินอยู่จะถูกออกจากระบบทันที)'))return;
+  try{var r=await api('setUserStatus',u,status);if(r&&r.success){UM.users=r.users;renderUsers();toast(r.message);}else toast((r&&r.message)||'ไม่สำเร็จ',true);}
+  catch(e){toast('ไม่สำเร็จ: '+errMsg(e),true);}
+}
+function bindAuthUI(){
+  $('btnNewUser').addEventListener('click',function(){openUserForm(null);});
+  $('btnUserCancel').addEventListener('click',function(){showEl('userForm',false);UM.edit=null;});
+  $('btnUserSave').addEventListener('click',saveUserUI);
+  $('btnGenPin').addEventListener('click',function(){var p=genPin();if(!p)toast('สุ่ม PIN ไม่ได้ในเบราว์เซอร์นี้ กรุณาพิมพ์ PIN เอง',true);else $('uf_pin').value=p;});
+  $('uf_role').addEventListener('change',onRoleChange);
+  $('userTbl').addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;
+    var u=b.closest('tr').getAttribute('data-u'),act=b.getAttribute('data-act');
+    if(act==='edit')openUserForm(UM.users.filter(function(x){return x.username===u;})[0]);
+    else if(act==='delete')deleteUserUI(u);
+    else setUserStatusUI(u,act==='disable'?'disabled':'active');
+  });
+  ['rp_q','rp_room','rp_nut','rp_g'].forEach(function(id){$(id).addEventListener('input',renderReport);$(id).addEventListener('change',renderReport);});
+  $('btnRepCsv').addEventListener('click',exportCsv);
+  $('btnRepXlsx').addEventListener('click',exportXlsx);
+  $('btnRepPrint').addEventListener('click',printReport);
+}
+
+function applyBootstrap(b){
+  S.settings=b.settings;S.rooms=b.rooms||[];S.allStudents=b.students||[];S.years=b.years||[];
+  S.holidayList=b.holidays||[];
+  S.holidays={};
+  S.holidayList.forEach(function(h){if(!h.open)S.holidays[h.date]=h.name||'วันหยุด';});
+  S.critAll={'2-5':{},'6-19':{}};
+  (b.criteria||[]).forEach(function(r){var g=normG(r.g);if(!g)return;var bd=S.critAll[r.b]||(S.critAll[r.b]={});(bd[g]=bd[g]||[]).push(r);});
+  Object.keys(S.critAll).forEach(function(bd){Object.keys(S.critAll[bd]).forEach(function(g){S.critAll[bd][g].sort(function(a,c){return a.h-c.h;});});});
+  var saved='';try{saved=localStorage.getItem('hr_room')||'';}catch(e){}
+  setRoom(S.room||saved);
+}
+function parseRoom(t){
+  t=String(t==null?'':t).replace(/\s+/g,' ').trim().replace(/^ชั้น\s*/,'');
+  if(!t)return null;
+  var m=t.match(/^(อนุบาลศึกษา|อนุบาล|ประถมศึกษา|ประถม|อ|ป)\s*\.?\s*(?:ปีที่\s*)?([1-6])(?![0-9])\s*(.*)$/);
+  if(!m)return null;
+  var pre=m[1].charAt(0)==='อ'?'อ':'ป',n=Number(m[2]);
+  if(pre==='อ'&&n>3)return null;
+  var suf=String(m[3]||'').replace(/^\s*(?:\/|-|ห้องที่|ห้อง|\.)\s*/,'').trim();
+  if(suf.length>12)return null;
+  var level=pre+'.'+n;
+  return {level:level,suffix:suf,key:level+(suf?'/'+suf:'')};
+}
+function levelFull(l){return (l.charAt(0)==='อ'?'อนุบาลปีที่ ':'ประถมศึกษาปีที่ ')+l.slice(2);}
+function roomFull(key){var p=parseRoom(key);return p?'ชั้น'+levelFull(p.level)+(p.suffix?'/'+p.suffix:''):String(key);}
+function roomShort(key){return 'ชั้น '+key;}
+function autoPos(key){return 'ครูประจำชั้น'+roomFull(key).replace(/^ชั้น/,'');}
+function bandOf(level){return String(level||'').charAt(0)==='อ'?'2-5':'6-19';}
+function curRoom(){return S.rooms.filter(function(r){return r.name===S.room;})[0]||S.rooms[0]||{name:'',level:'อ.2',teacher:'',pos:'ครูประจำชั้น'};}
+function setRoom(name){
+  S.room=S.rooms.some(function(r){return r.name===name;})?name:(S.rooms[0]?S.rooms[0].name:'');
+  var r=curRoom();
+  S.students=S.allStudents.filter(function(x){return x.room===S.room;});
+  S.crit=S.critAll[bandOf(r.level)]||{};
+  try{localStorage.setItem('hr_room',S.room);}catch(e){}
+  buildRoomSelect();
+  renderHeader();
+}
+function buildRoomSelect(){
+  var el=$('selRoom');if(!el)return;
+  el.innerHTML=S.rooms.map(function(r){return '<option value="'+esc(r.name)+'">'+esc(roomShort(r.name))+'</option>';}).join('');
+  el.value=S.room;
+}
+function renderHeader(){
+  var s=S.settings;
+  $('schoolTitle').textContent=s.schoolName||'(ยังไม่ได้ตั้งชื่อโรงเรียน)';
+  $('classSub').textContent=roomShort(S.room)+' · ปีการศึกษา '+S.period.year;
+}
+function normG(g){g=String(g||'');if(g.indexOf('ชาย')>=0||/^m/i.test(g))return 'ชาย';if(g.indexOf('หญิง')>=0||/^f/i.test(g))return 'หญิง';return '';}
+
+/* ---------- เดือน/ปี ---------- */
+function monthInfo(){
+  var y=S.period.year,m=S.period.month,sm=S.settings.startMonth||5;
+  var cal=(m>=sm)?y-543:y-543+1;
+  var days=new Date(cal,m,0).getDate();
+  var dow=new Date(cal,m-1,1).getDay();
+  var list=[],school=0;
+  for(var d=1;d<=days;d++){
+    var wd=(dow+d-1)%7,we=(wd===0||wd===6);
+    var hol=S.holidays[cal+'-'+pad(m)+'-'+pad(d)];
+    var x={d:d,wd:wd,we:we,hol:(hol===undefined?null:hol)};
+    if(!we&&x.hol===null)school++;
+    list.push(x);
+  }
+  return {cal:cal,days:days,list:list,school:school};
+}
+function dayCls(x){return x.hol!==null?'hol':(x.we?'we':'');}
+function periodLabel(){return TH_MONTHS[S.period.month-1]+' '+S.period.year;}
+function buildPeriodSelectors(){
+  var sm=S.settings.startMonth||5,mo='';
+  for(var i=0;i<12;i++){var m=((sm-1+i)%12)+1;mo+='<option value="'+m+'">'+TH_MONTHS[m-1]+'</option>';}
+  $('selMonth').innerHTML=mo;
+  var ys={};S.years.forEach(function(y){ys[y]=1;});ys[S.settings.academicYear]=1;ys[S.period.year]=1;
+  var arr=Object.keys(ys).map(Number).sort(function(a,b){return b-a;});
+  $('selYear').innerHTML=arr.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+  $('selYear').value=S.period.year;$('selMonth').value=S.period.month;
+  var opts='';for(var m2=1;m2<=12;m2++)opts+='<option value="'+m2+'">'+TH_MONTHS[m2-1]+'</option>';
+  $('set_startMonth').innerHTML=opts;$('set_currentMonth').innerHTML=opts;
+}
+function todayPeriod(){
+  var p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'numeric'}).formatToParts(new Date()),y=0,m=0;
+  p.forEach(function(x){if(x.type==='year')y=+x.value;if(x.type==='month')m=+x.value;});
+  var sm=S.settings.startMonth||5;
+  return {year:(m>=sm?y:y-1)+543,month:m};
+}
+function anyDirty(){return S.dirty.milk||S.dirty.brush||S.dirty.health||S.dirty.check;}
+function anySaving(){return S.saving.milk||S.saving.brush||S.saving.health||S.saving.check||S.indivSaving;}
+async function changePeriod(){
+  if(anySaving()){toast('กำลังบันทึกข้อมูลอยู่ กรุณารอสักครู่ก่อนเปลี่ยนเดือน/ปี',true);$('selYear').value=S.period.year;$('selMonth').value=S.period.month;return;}
+  if(anyDirty()&&!confirm('มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนเดือน/ปีและทิ้งข้อมูลนี้หรือไม่?')){
+    $('selYear').value=S.period.year;$('selMonth').value=S.period.month;return;
+  }
+  S.period={year:+$('selYear').value,month:+$('selMonth').value};
+  await loadPeriod();
+}
+function pkey(y,m){return y+'-'+m;}
+var PTYPES=['milk','brush','health','check'];
+function applyPeriod(d){
+  S.data={};S.base={};
+  PTYPES.forEach(function(t){S.data[t]=cloneJ(d[t]||{});S.base[t]=cloneJ(d[t]||{});S.dirty[t]=false;S.ver[t]=0;$('btnSave-'+t).classList.remove('dirty');});
+  S.ref=cloneJ(d.ref||{});
+  document.body.classList.remove('pload');
+  renderHeader();renderAll();
+}
+async function loadPeriod(opts){
+  opts=opts||{};
+  var y=S.period.year,m=S.period.month,k=pkey(y,m),seq=++S.pseq;
+  if(opts.force)delete S.pcache[k];
+  var c=S.pcache[k];
+  if(c){
+    applyPeriod(c.d);
+    if(Date.now()-c.t<30000){prefetchAdj();return;}
+    var d0;try{d0=await apiBg('getPeriod',y,m);}catch(e){return;}
+    if(!S.pcache)return;
+    S.pcache[k]={d:d0,t:Date.now()};
+    if(seq!==S.pseq||anyDirty()||anySaving())return;
+    applyPeriod(d0);prefetchAdj();return;
+  }
+  document.body.classList.add('pload');
+  var d;
+  try{d=await apiBg('getPeriod',y,m);}
+  catch(e){if(seq===S.pseq){document.body.classList.remove('pload');toast('โหลดข้อมูลเดือนนี้ไม่สำเร็จ: '+errMsg(e),true);}return;}
+  S.pcache[k]={d:d,t:Date.now()};
+  if(seq!==S.pseq)return;
+  applyPeriod(d);prefetchAdj();
+}
+var pfTimer=null;
+function prefetchAdj(){
+  clearTimeout(pfTimer);
+  pfTimer=setTimeout(async function(){
+    var sm=S.settings.startMonth||5,y=S.period.year,m=S.period.month,list=[];
+    var nm=m%12+1;if(nm!==sm)list.push([y,nm]);
+    if(m!==sm)list.push([y,m===1?12:m-1]);
+    for(var i=0;i<list.length;i++){
+      if(!AUTHST.token||anyDirty())return;
+      var k=pkey(list[i][0],list[i][1]);if(S.pcache[k])continue;
+      try{var d=await apiQuiet('getPeriod',list[i][0],list[i][1]);if(S.pcache)S.pcache[k]={d:d,t:Date.now()};}catch(e){return;}
     }
+  },600);
+}
+function renderAll(){renderLog('milk');renderLog('brush');renderHealth();renderCheck();renderDash();if(S.tab==='report')renderReport();}
 
-    // ส่งข้อมูลเมื่อกดบันทึก
-    document.getElementById('reportForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      btn.innerText = 'กำลังบันทึก...';
-      btn.disabled = true;
-
-      const payload = {
-        date: document.getElementById('date').value,
-        location: document.getElementById('location').value,
-        workType: document.getElementById('workType').value,
-        description: document.getElementById('description').value,
-        inspector: document.getElementById('inspector').value
-      };
-
-      fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        alert(res.message);
-        document.getElementById('reportForm').reset();
-        loadReports();
-      })
-      .catch(err => {
-        alert('เกิดข้อผิดพลาดในการบันทึก');
-      })
-      .finally(() => {
-        btn.innerText = 'บันทึกรายงาน';
-        btn.disabled = false;
-      });
+/* ---------- ตารางนม / แปรงฟัน ---------- */
+function renderLog(type){
+  var mi=monthInfo(),set=S.data[type];
+  $('cap-'+type).textContent=(type==='milk'?'การดื่มนม':'การแปรงฟัน')+' · '+periodLabel()+' · วันเรียน '+mi.school+' วัน';
+  var tbl=$('tbl-'+type);tbl.classList.add('fx');tbl.style.minWidth=(40+160+24*mi.days+50)+'px';
+  var dw=(100-17-4)/mi.days;
+  var h='<colgroup><col style="width:40px"><col style="width:17%">'+new Array(mi.days+1).join('<col style="width:'+dw.toFixed(3)+'%">')+'<col style="width:4%"></colgroup>';
+  h+='<thead><tr><th class="c-no">ที่</th><th class="c-name">ชื่อ – สกุล</th>';
+  mi.list.forEach(function(x){h+='<th class="dh '+dayCls(x)+'" data-d="'+x.d+'" title="'+esc(x.hol||'')+'">'+TH_DOW[x.wd]+'<br>'+x.d+'</th>';});
+  h+='<th>รวม</th></tr></thead><tbody>';
+  S.students.forEach(function(st){
+    var arr=set[st.id]||[];
+    h+='<tr data-id="'+esc(st.id)+'"><td class="c-no">'+st.no+'</td><td class="c-name">'+esc(st.name)+'</td>';
+    mi.list.forEach(function(x){
+      var on=arr.indexOf(x.d)>=0;
+      h+='<td class="dc '+dayCls(x)+(on?' on':'')+'" data-d="'+x.d+'">'+(on?'✓':'')+'</td>';
     });
+    h+='<td class="tot"><b>'+countValid(arr,mi.days)+'</b></td></tr>';
+  });
+  if(!S.students.length)h+='<tr><td colspan="'+(mi.days+3)+'" class="hint" style="padding:20px">ยังไม่มีรายชื่อนักเรียน — ไปที่ "ตั้งค่า" เพื่อเพิ่มรายชื่อ</td></tr>';
+  $('tbl-'+type).innerHTML=h+'</tbody>';
+}
+function countValid(arr,days){return arr.filter(function(d){return d>=1&&d<=days;}).length;}
+function markDirty(type){S.dirty[type]=true;S.ver[type]++;$('btnSave-'+type).classList.add('dirty');}
+function toggleCell(type,td){
+  if(RO())return;
+  var tr=td.parentNode,id=tr.getAttribute('data-id'),d=+td.getAttribute('data-d');
+  var arr=S.data[type][id]||(S.data[type][id]=[]);
+  var i=arr.indexOf(d);
+  if(i>=0)arr.splice(i,1);else arr.push(d);
+  var on=i<0;td.classList.toggle('on',on);td.textContent=on?'✓':'';
+  tr.querySelector('.tot').innerHTML='<b>'+countValid(arr,monthInfo().days)+'</b>';
+  markDirty(type);
+}
+function toggleDay(type,d){
+  if(RO())return;
+  var mi=monthInfo(),x=mi.list[d-1];
+  if(x.we||x.hol!==null){toast('วันหยุด: คลิกที่ช่องเองได้ถ้าต้องการติ๊ก');return;}
+  var all=S.students.every(function(st){return (S.data[type][st.id]||[]).indexOf(d)>=0;});
+  S.students.forEach(function(st){
+    var arr=S.data[type][st.id]||(S.data[type][st.id]=[]);var i=arr.indexOf(d);
+    if(all&&i>=0)arr.splice(i,1);else if(!all&&i<0)arr.push(d);
+  });
+  markDirty(type);renderLog(type);
+}
+function saveBtn(type,on){var b=$('btnSave-'+type);if(!b)return;if(!b.getAttribute('data-lbl'))b.setAttribute('data-lbl',b.textContent);b.disabled=!!on;b.textContent=on?'กำลังบันทึก…':b.getAttribute('data-lbl');}
+function afterSave(type,y,m,ok){
+  S.saving[type]=false;saveBtn(type,false);
+  $('btnSave-'+type).classList.toggle('dirty',!!S.dirty[type]);
+  if(ok){delete S.pcache[pkey(y,m)];if(S.years.indexOf(y)<0)S.years.push(y);}
+}
+function dayObj(a){var days=monthInfo().days,o={};(a||[]).forEach(function(d){if(d>=1&&d<=days)o[d]=1;});return o;}
+async function saveLog(type){
+  if(S.saving[type])return;
+  var y=S.period.year,m=S.period.month,ver=S.ver[type],grid={},sent={},n=0;
+  S.students.forEach(function(st){
+    var cur=dayObj(S.data[type][st.id]),base=dayObj(S.base[type][st.id]),a=[],r=[];
+    Object.keys(cur).forEach(function(d){if(!base[d])a.push(+d);});
+    Object.keys(base).forEach(function(d){if(!cur[d])r.push(+d);});
+    ifa.length||r.length={a:a,r:r};sent[st.id]=(S.data[type][st.id]||[]).slice();n++;}
+  });
+  if(!n){S.dirty[type]=false;$('btnSave-'+type).classList.remove('dirty');toast('ไม่มีการเปลี่ยนแปลงที่ต้องบันทึก');return;}
+  var ids=S.students.map(function(x){return x.id;}),ok=false;
+  S.saving[type]=true;saveBtn(type,true);
+  try{
+    var r=await apiBg('saveRoutine',y,m,type,grid,ids,'diff');
+    if(r&&r.success&&r.merged){
+      ok=true;
+      if(S.ver[type]===ver){
+        var before=JSON.stringify(S.data[type]);
+        ids.forEach(function(id){if(r.merged[id])S.data[type][id]=r.merged[id].slice();else delete S.data[type][id];});
+        S.base[type]=cloneJ(S.data[type]);S.dirty[type]=false;
+        if(JSON.stringify(S.data[type])!==before)renderLog(type);
+      }else{Object.keys(sent).forEach(function(id){S.base[type][id]=sent[id].slice();});}
+      toast(r.message);renderDash();
+    }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
+  afterSave(type,y,m,ok);
+}
 
-    loadReports();
-  </script>
+/* ---------- ตรวจสุขภาพรายสัปดาห์ ---------- */
+var CK_ITEMS=['เล็บ','ฟัน','ผม','ร่างกาย'];
+function ckArr(id){var t=S.data.check[id]||'';while(t.length<20)t+='-';return t.substring(0,20).split('');}
+function ckAuto(a,i){var n=0,g=0;for(var w=0;w<4;w++){var c=a[w*4+i];if(c!=='-'){n++;if(c==='g')g++;}}return n?(g/n>=0.75?'g':'x'):'-';}
+function ckSum(a,i){return a[16+i]!=='-'?a[16+i]:ckAuto(a,i);}
+function ckSym(c){return c==='g'?'✓':c==='x'?'✗':'';}
+function renderCheck(){
+  $('cap-check').textContent='ตรวจสุขภาพ · '+periodLabel();
+  var t=$('tbl-check');t.classList.add('fx');t.style.minWidth='900px';
+  var cw=((100-17)/20).toFixed(3);
+  var h='<colgroup><col style="width:40px"><col style="width:17%">'+new Array(21).join('<col style="width:'+cw+'%">')+'</colgroup><thead><tr><th class="c-no" rowspan="2">ที่</th><th class="c-name" rowspan="2">ชื่อ – สกุล</th>';
+  for(var w=1;w<=4;w++)h+='<th colspan="4">สัปดาห์ที่ '+w+'</th>';
+  h+='<th colspan="4">สรุปผลการตรวจ</th></tr><tr>';
+  for(var w2=0;w2<4;w2++)CK_ITEMS.forEach(function(n,i){h+='<th class="ch" data-k="'+(w2*4+i)+'" title="คลิกเพื่อติ๊กทั้งห้อง">'+n+'</th>';});
+  CK_ITEMS.forEach(function(n){h+='<th>'+n+'</th>';});
+  h+='</tr></thead><tbody>';
+  S.students.forEach(function(st){
+    h+='<tr data-id="'+esc(st.id)+'"><td class="c-no">'+st.no+'</td><td class="c-name">'+esc(st.name)+'</td>'+ckCells(ckArr(st.id))+'</tr>';
+  });
+  if(!S.students.length)h+='<tr><td colspan="22" class="hint" style="padding:20px">ยังไม่มีรายชื่อนักเรียน</td></tr>';
+  t.innerHTML=h+'</tbody>';
+}
+function ckCells(a){
+  var h='';
+  for(var k=0;k<16;k++)h+='<td class="kc '+(a[k]==='-'?'':a[k])+'" data-k="'+k+'">'+ckSym(a[k])+'</td>';
+  for(var i=0;i<4;i++){var v=ckSum(a,i);h+='<td class="kc sm '+(v==='-'?'':v)+(a[16+i]!=='-'?' ov':'')+'" data-k="'+(16+i)+'">'+ckSym(v)+'</td>';}
+  return h;
+}
+function ckSet(id,k,c){var a=ckArr(id);a[k]=c;var t=a.join('');if(/^-+$/.test(t))delete S.data.check[id];else S.data.check[id]=t;}
+function ckClick(td){
+  if(RO())return;
+  var tr=td.parentNode,id=tr.getAttribute('data-id'),k=+td.getAttribute('data-k'),a=ckArr(id),cur=a[k];
+  var next=cur==='-'?'g':cur==='g'?'x':'-';
+  ckSet(id,k,next);
+  tr.innerHTML=tr.children[0].outerHTML+tr.children[1].outerHTML+ckCells(ckArr(id));
+  markDirty('check');
+}
+function ckHead(k){
+  if(RO())return;
+  var all=S.students.length&&S.students.every(function(st){return ckArr(st.id)[k]==='g';});
+  S.students.forEach(function(st){ckSet(st.id,k,all?'-':'g');});
+  markDirty('check');renderCheck();
+}
+function ckBase(id){var t=S.base.check[id]||'';while(t.length<20)t+='-';return t.substring(0,20).split('');}
+async function saveCheck(){
+  if(S.saving.check)return;
+  var y=S.period.year,m=S.period.month,ver=S.ver.check,map={},sent={},n=0;
+  S.students.forEach(function(st){
+    var cur=ckArr(st.id),base=ckBase(st.id),pos={},c=0;
+    for(var k=0;k<20;k++)if(cur[k]!==base[k]){pos[k]=cur[k];c++;}
+    if(c){map[st.id]=pos;sent[st.id]=S.data.check[st.id]||'';n++;}
+  });
+  if(!n){S.dirty.check=false;$('btnSave-check').classList.remove('dirty');toast('ไม่มีการเปลี่ยนแปลงที่ต้องบันทึก');return;}
+  var ids=S.students.map(function(x){return x.id;}),ok=false;
+  S.saving.check=true;saveBtn('check',true);
+  try{
+    var r=await apiBg('saveCheck',y,m,map,ids,'diff');
+    if(r&&r.success&&r.merged){
+      ok=true;
+      if(S.ver.check===ver){
+        var before=JSON.stringify(S.data.check);
+        ids.forEach(function(id){if(r.merged[id])S.data.check[id]=r.merged[id];else delete S.data.check[id];});
+        S.base.check=cloneJ(S.data.check);S.dirty.check=false;
+        if(JSON.stringify(S.data.check)!==before)renderCheck();
+      }else{Object.keys(sent).forEach(function(id){if(sent[id])S.base.check[id]=sent[id];else delete S.base.check[id];});}
+      toast(r.message);
+    }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
+  afterSave('check',y,m,ok);
+}
+function buildCheckPrint(){
+  var rows=Math.max(MIN_ROWS,S.students.length);
+  var h=pHead('แบบบันทึกการตรวจสุขภาพ');
+  h+='<div class="p-note"><u>คำชี้แจง</u> ให้ผู้ประเมินเขียนเครื่องหมาย ✓ (ดี) หรือ ✗ (ปรับปรุง) ในช่องที่ได้ตรวจสุขภาพประเภทนั้นๆ ตามคุณภาพของความสะอาด</div>';
+  h+='<table class="ptable chk"><colgroup><col style="width:9mm"><col style="width:50mm">'+new Array(21).join('<col>')+'</colgroup><thead><tr><th rowspan="2">ที่</th><th rowspan="2">ชื่อ – สกุล</th>';
+  for(var w=1;w<=4;w++)h+='<th colspan="4">สัปดาห์ที่ '+w+'</th>';
+  h+='<th colspan="4">สรุปผลการตรวจสุขภาพ</th></tr><tr>';
+  for(var q=0;q<5;q++)CK_ITEMS.forEach(function(n){h+='<th>'+n+'</th>';});
+  h+='</tr></thead><tbody>';
+  for(var r=0;r<rows;r++){
+    var st=S.students[r],a=st?ckArr(st.id):null;
+    h+='<tr><td>'+(st?st.no:'')+'</td><td class="nm">'+(st?esc(st.name):'')+'</td>';
+    for(var k=0;k<16;k++)h+='<td>'+(a?ckSym(a[k]):'')+'</td>';
+    for(var i=0;i<4;i++)h+='<td>'+(a?ckSym(ckSum(a,i)):'')+'</td>';
+    h+='</tr>';
+  }
+  return h+'</tbody></table>'+pSig('tight');
+}
+
+/* ---------- น้ำหนัก-ส่วนสูง ---------- */
+var NUTRI={vthin:'ผอม',thin:'ค่อนข้างผอม',ok:'สมส่วน',plump:'ท้วม',over:'เริ่มอ้วน',obese:'อ้วน'};
+var NUTRI_COLORS={vthin:'#1b4f72',thin:'#5dade2',ok:'#1a7f4b',plump:'#f4d03f',over:'#e67e22',obese:'#c0392b'};
+var CUT_KEYS=['m2','m15','p15','p2','p3'];
+function evalNutrition(st,w,h,critOverride){
+  w=parseFloat(w);h=parseFloat(h);
+  if(!(w>0&&h>0))return null;
+  var g=normG(st.gender);if(!g)return 'nogender';
+  var rows=(critOverride||S.crit)[g];
+  if(!rows||!rows.length)return 'na';
+  var n=rows.length;
+  if(h<rows[0].h-0.5||h>rows[n-1].h+0.5)return 'out';
+  var a=rows[0],b=rows[0];
+  for(var i=0;i<n;i++){
+    if(rows[i].h<=h){a=rows[i];b=rows[Math.min(i+1,n-1)];}
+  }
+  var t=(b.h>a.h)?Math.min(1,Math.max(0,(h-a.h)/(b.h-a.h))):0;
+  var c={};CUT_KEYS.forEach(function(k){c[k]=a[k]+(b[k]-a[k])*t;});
+  if(w<c.m2)return 'vthin';
+  if(w<c.m15)return 'thin';
+  if(w<=c.p15)return 'ok';
+  if(w<=c.p2)return 'plump';
+  if(w<=c.p3)return 'over';
+  return 'obese';
+}
+function critReady(){return Object.keys(S.crit).length>0;}
+function statusText(s){
+  if(!s)return '';
+  if(NUTRI[s])return NUTRI[s];
+  return s==='na'?'ไม่มีเกณฑ์':(s==='out'?'ส่วนสูงนอกช่วงตารางเกณฑ์':(s==='nogender'?'ยังไม่ระบุเพศ':''));
+}
+function renderHealth(){
+  $('cap-health').textContent='น้ำหนัก-ส่วนสูง · '+periodLabel();
+  var rm=curRoom(),bd=bandOf(rm.level);
+  $('critBanner').innerHTML=critReady()?'<div class="hint" style="margin-bottom:8px">ห้อง '+esc(rm.name)+' ('+esc(rm.level)+') ใช้เกณฑ์น้ำหนักตามเกณฑ์ส่วนสูง อายุ '+(bd==='2-5'?'2–5 ปี (ส่วนสูง 65–140 ซม.)':'6–19 ปี (ส่วนสูง 90–185 ซม.)')+'</div>':'<div class="banner">ห้อง '+esc(rm.name)+' ('+esc(rm.level)+') ต้องใช้ตารางเกณฑ์อายุ '+(bd==='2-5'?'2–5 ปี':'6–19 ปี')+' แต่ไม่พบตารางนี้ในชีต "เกณฑ์โภชนาการ" (ตรวจคอลัมน์ "ช่วงอายุ" ในชีตนั้น ควรเป็น "อายุ '+bd+' ปี") ระบบจึงยังประเมินภาวะโภชนาการไม่ได้</div>';
+  var ht=$('tbl-health');ht.classList.add('fx');ht.style.minWidth='760px';
+  var h='<colgroup><col style="width:40px"><col style="width:28%"><col style="width:84px"><col style="width:84px"><col style="width:76px"><col style="width:76px"><col></colgroup>';
+  h+='<thead><tr><th class="c-no">ที่</th><th class="c-name">ชื่อ – สกุล</th><th>น้ำหนัก<br>(กก.)</th><th>ส่วนสูง<br>(ซม.)</th><th>ตามเกณฑ์</th><th>ต่ำกว่า<br>เกณฑ์</th><th>หมายเหตุ</th></tr></thead><tbody>';
+  S.students.forEach(function(st){
+    var v=S.data.health[st.id]||{w:'',h:''};
+    h+='<tr data-id="'+esc(st.id)+'"><td class="c-no">'+st.no+'</td><td class="c-name">'+esc(st.name)+'</td>'+
+      '<td><input class="hin" type="number" step="0.1" data-f="w" value="'+esc(v.w)+'"'+dis()+'></td>'+
+      '<td><input class="hin" type="number" step="0.1" data-f="h" value="'+esc(v.h)+'"'+dis()+'></td>'+
+      '<td class="s-ok st-ok"></td><td class="s-under st-under"></td><td class="s-note"></td></tr>';
+  });
+  if(!S.students.length)h+='<tr><td colspan="7" class="hint" style="padding:20px">ยังไม่มีรายชื่อนักเรียน</td></tr>';
+  $('tbl-health').innerHTML=h+'</tbody>';
+  $('tbl-health').querySelectorAll('tbody tr[data-id]').forEach(function(tr){updateHealthRow(tr);});
+}
+function statusOf(id){
+  var st=S.students.filter(function(s){return s.id===id;})[0];
+  var v=S.data.health[id]||{};
+  return st?evalNutrition(st,v.w,v.h):null;
+}
+function monthLabel(it){return TH_MONTHS[it.m-1]+' '+it.y;}
+function curOrd(){var sm=S.settings.startMonth||5;return S.period.year*12+((S.period.month-sm+12)%12);}
+function checkVitals(id){
+  var v=S.data.health[id]||{},e=S.ref[id]||{},r={hBad:'',wBad:'',hWarn:'',wWarn:''};
+  var h=parseFloat(v.h),w=parseFloat(v.w),co=curOrd();
+  if(!isNaN(h)){
+    if(h<40||h>200)r.hBad='ส่วนสูงต้องอยู่ระหว่าง 40–200 ซม.';
+    else if(e.prevH&&h<e.prevH.v)r.hBad='ส่วนสูงลดลงไม่ได้: '+monthLabel(e.prevH)+' บันทึกไว้ '+e.prevH.v+' ซม.';
+    else if(e.nextH&&h>e.nextH.v)r.hBad='สูงกว่า '+monthLabel(e.nextH)+' ('+e.nextH.v+' ซม.) — ตรวจว่าเดือนใดกรอกผิด';
+    else if(e.prevH){var gap=Math.max(1,co-e.prevH.ord);if(h-e.prevH.v>2*gap+2)r.hWarn='ส่วนสูงเพิ่มมากผิดปกติ (+'+(h-e.prevH.v).toFixed(1)+' ซม. จาก '+monthLabel(e.prevH)+')';}
+  }
+  if(!isNaN(w)){
+    if(w<5||w>150)r.wBad='น้ำหนักต้องอยู่ระหว่าง 5–150 กก.';
+    else if(e.prevW){var d=Math.abs(w-e.prevW.v);if(d>Math.max(3,e.prevW.v*0.2))r.wWarn='น้ำหนักเปลี่ยนมากผิดปกติ ('+(w>e.prevW.v?'+':'-')+d.toFixed(1)+' กก. จาก '+monthLabel(e.prevW)+')';}
+  }
+  return r;
+}
+function updateHealthRow(tr){
+  var id=tr.getAttribute('data-id'),s=statusOf(id),c=checkVitals(id);
+  tr.querySelector('.s-ok').textContent=s==='ok'?'✓':'';
+  tr.querySelector('.s-under').textContent=(s==='vthin'||s==='thin')?'✓':'';
+  var hi=tr.querySelector('[data-f=h]'),wi=tr.querySelector('[data-f=w]');
+  hi.classList.toggle('inv',!!c.hBad);hi.classList.toggle('wn',!c.hBad&&!!c.hWarn);
+  wi.classList.toggle('inv',!!c.wBad);wi.classList.toggle('wn',!c.wBad&&!!c.wWarn);
+  var note=tr.querySelector('.s-note'),bad=c.hBad||c.wBad,warn=c.hWarn||c.wWarn;
+  if(bad)note.innerHTML='<span class="vmsg-bad">'+esc(bad)+'</span>';
+  else if(warn)note.innerHTML='<span class="vmsg-warn">'+esc(warn)+'</span>'+(s&&s!=='ok'?' · '+esc(statusText(s)):'');
+  else note.textContent=s==='ok'?'':statusText(s);
+}
+function onHealthInput(e){
+  var inp=e.target;if(!inp.classList.contains('hin'))return;
+  var tr=inp.closest('tr'),id=tr.getAttribute('data-id');
+  var v=S.data.health[id]||(S.data.health[id]={w:'',h:''});
+  v[inp.getAttribute('data-f')]=inp.value===''?'':parseFloat(inp.value);
+  updateHealthRow(tr);markDirty('health');
+}
+async function saveHealth(){
+  var badN=0,firstBad=null;
+  S.students.forEach(function(st){var c=checkVitals(st.id);if(c.hBad||c.wBad){badN++;if(!firstBad)firstBad=st.id;}});
+  if(badN){
+    toast('มีค่าน้ำหนัก-ส่วนสูงที่ไม่สมเหตุสมผล '+badN+' คน (ช่องสีแดง) กรุณาแก้ก่อนบันทึก',true);
+    var tr=$('tbl-health').querySelector('tr[data-id="'+firstBad+'"]');if(tr&&tr.scrollIntoView)tr.scrollIntoView({block:'center'});
+    return;
+  }
+  if(S.saving.health)return;
+  var y=S.period.year,m=S.period.month,ver=S.ver.health,rows=[],sent={},nv=function(x){return (x===undefined||x===null)?'':x;};
+  S.students.forEach(function(st){
+    var v=S.data.health[st.id]||{},b=S.base.health[st.id]||{},o={id:st.id},c=0;
+    if(nv(v.w)!==nv(b.w)){o.w=nv(v.w);c++;}
+    if(nv(v.h)!==nv(b.h)){o.h=nv(v.h);c++;}
+    if(c){rows.push(o);sent[st.id]={w:nv(v.w),h:nv(v.h)};}
+  });
+  if(!rows.length){S.dirty.health=false;$('btnSave-health').classList.remove('dirty');toast('ไม่มีการเปลี่ยนแปลงที่ต้องบันทึก');return;}
+  var ids=S.students.map(function(x){return x.id;}),ok=false;
+  S.saving.health=true;saveBtn('health',true);
+  try{
+    var r=await apiBg('saveHealth',y,m,rows,ids,'diff');
+    if(r&&r.success&&r.merged){
+      ok=true;
+      if(S.ver.health===ver){
+        var before=JSON.stringify(S.data.health);
+        ids.forEach(function(id){if(r.merged[id])S.data.health[id]={w:r.merged[id].w,h:r.merged[id].h};else delete S.data.health[id];});
+        S.base.health=cloneJ(S.data.health);S.dirty.health=false;
+        if(JSON.stringify(S.data.health)!==before)renderHealth();
+      }else{Object.keys(sent).forEach(function(id){S.base.health[id]={w:sent[id].w,h:sent[id].h};});}
+      toast(r.message);renderDash();
+    }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
+  afterSave('health',y,m,ok);
+}
+
+/* ---------- สรุปผล ---------- */
+function renderDash(){
+  $('cap-dash').textContent='สรุปผล · '+periodLabel();
+  var mi=monthInfo(),n=S.students.length,c={vthin:0,thin:0,ok:0,plump:0,over:0,obese:0},tm=0,tb=0;
+  S.students.forEach(function(st){
+    var s=statusOf(st.id);if(s&&c[s]!==undefined)c[s]++;
+    tm+=countValid(S.data.milk[st.id]||[],mi.days);tb+=countValid(S.data.brush[st.id]||[],mi.days);
+  });
+  var avg=function(t){return n?(t/n).toFixed(1):'0';};
+  $('dashCards').innerHTML=
+    '<div class="stat"><small>นักเรียนทั้งหมด</small><b>'+n+'</b></div>'+
+    '<div class="stat"><small>ตามเกณฑ์</small><b style="color:var(--ok)">'+c.ok+'</b></div>'+
+    '<div class="stat"><small>ต่ำกว่าเกณฑ์ (ผอม/ค่อนข้างผอม)</small><b style="color:var(--warn)">'+(c.vthin+c.thin)+'</b></div>'+
+    '<div class="stat"><small>เกินเกณฑ์ (ท้วม/เริ่มอ้วน/อ้วน)</small><b>'+(c.plump+c.over+c.obese)+'</b></div>'+
+    '<div class="stat"><small>ดื่มนมเฉลี่ย (จาก '+mi.school+' วันเรียน)</small><b>'+avg(tm)+' วัน</b></div>'+
+    '<div class="stat"><small>แปรงฟันเฉลี่ย</small><b>'+avg(tb)+' วัน</b></div>';
+  if(typeof Chart==='undefined')return;
+  try{
+    killChart('nutri');killChart('routine');
+    var box=$('chRoutine').parentNode;box.style.height=Math.max(250,n*30+70)+'px';
+    S.charts.nutri=new Chart($('chNutri'),{type:'doughnut',data:{labels:Object.keys(NUTRI).map(function(k){return NUTRI[k];}),datasets:[{data:Object.keys(NUTRI).map(function(k){return c[k];}),backgroundColor:Object.keys(NUTRI).map(function(k){return NUTRI_COLORS[k];})}]},options:{responsive:true,maintainAspectRatio:false}});
+    S.charts.routine=new Chart($('chRoutine'),{type:'bar',data:{labels:S.students.map(function(s){return s.nickname||s.name;}),datasets:[
+      {label:'ดื่มนม (วัน)',data:S.students.map(function(s){return countValid(S.data.milk[s.id]||[],mi.days);}),backgroundColor:'#1f4e79'},
+      {label:'แปรงฟัน (วัน)',data:S.students.map(function(s){return countValid(S.data.brush[s.id]||[],mi.days);}),backgroundColor:'#5aa9d6'}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{beginAtZero:true,suggestedMax:Math.max(1,mi.school),ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}});
+  }catch(e){}
+}
+function killChart(k){if(S.charts[k]){S.charts[k].destroy();S.charts[k]=null;}}
+function populateGrowthSelect(){
+  $('selGrowth').innerHTML=S.students.map(function(s){return '<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>';}).join('');
+  loadGrowth();
+}
+async function loadGrowth(){
+  var id=$('selGrowth').value;if(!id||typeof Chart==='undefined')return;
+  var rows;try{rows=await api('getGrowth',S.period.year,id);}catch(e){return;}
+  var sm=S.settings.startMonth||5,labels=[],w=[],h=[];
+  for(var i=0;i<12;i++){
+    var m=((sm-1+i)%12)+1;labels.push(TH_MONTHS[m-1]);
+    var r=rows.filter(function(x){return x.month===m;})[0];
+    w.push(r?r.w:null);h.push(r?r.h:null);
+  }
+  killChart('growth');
+  try{S.charts.growth=new Chart($('chGrowth'),{type:'line',data:{labels:labels,datasets:[
+    {label:'น้ำหนัก (กก.)',data:w,borderColor:'#1f4e79',backgroundColor:'#1f4e79',yAxisID:'y',spanGaps:true},
+    {label:'ส่วนสูง (ซม.)',data:h,borderColor:'#e0a526',backgroundColor:'#e0a526',yAxisID:'y1',spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left',title:{display:true,text:'กก.'}},y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'ซม.'}}}}});}catch(e){}
+}
+
+/* ---------- รายบุคคล ---------- */
+function populateIndivSelect(){
+  var sel=$('selIndiv');
+  sel.innerHTML=S.students.map(function(s){return '<option value="'+esc(s.id)+'">เลขที่ '+s.no+' — '+esc(s.name)+(s.nickname?' ('+esc(s.nickname)+')':'')+'</option>';}).join('');
+  if(!S.students.length){S.indivId=null;fillForm({});$('indivNick').textContent='';return;}
+  if(!S.students.some(function(s){return s.id===S.indivId;}))S.indivId=S.students[0].id;
+  sel.value=S.indivId;loadIndiv();
+}
+function formEls(){return $('indivForm').querySelectorAll('input');}
+function collectForm(){
+  var o={};
+  formEls().forEach(function(el){
+    if(el.type==='radio'){if(el.checked)o[el.name]=el.value;}
+    else if(el.type==='checkbox'){if(el.checked)(o[el.name]=o[el.name]||[]).push(el.value);}
+    else if(el.value!=='')o[el.name]=el.value;
+  });
+  return o;
+}
+function fillForm(o){
+  o=o||{};
+  formEls().forEach(function(el){
+    var v=o[el.name];
+    if(el.type==='radio')el.checked=(v===el.value);
+    else if(el.type==='checkbox')el.checked=Array.isArray(v)&&v.indexOf(el.value)>=0;
+    else el.value=(v===undefined||v===null)?'':v;
+    el.disabled=RO();
+  });
+}
+async function loadIndiv(){
+  var id=S.indivId,seq=++S.indivSeq;
+  var st=S.students.filter(function(s){return s.id===id;})[0];
+  $('indivNick').textContent=st?('ชื่อเล่น: '+(st.nickname||'-')):'';
+  var c=S.icache[id];
+  fillForm(c?cloneJ(c):{});S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');
+  var d;try{d=await apiBg('getIndividual',id);}catch(e){if(!c)toast('โหลดประวัติไม่สำเร็จ: '+errMsg(e),true);return;}
+  S.icache[id]=cloneJ(d);
+  if(seq!==S.indivSeq||S.indivDirty)return;
+  fillForm(d);S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');
+}
+async function saveIndiv(){
+  if(!S.indivId||S.indivSaving)return;
+  var id=S.indivId,data=collectForm(),snap=JSON.stringify(data),b=$('btnSave-indiv');
+  if(!b.getAttribute('data-lbl'))b.setAttribute('data-lbl',b.textContent);
+  S.indivSaving=true;b.disabled=true;b.textContent='กำลังบันทึก…';
+  try{
+    var r=await apiBg('saveIndividual',id,data);
+    if(r&&r.success){
+      S.icache[id]=cloneJ(data);
+      if(S.indivId===id&&JSON.stringify(collectForm())===snap){S.indivDirty=false;}
+      toast(r.message);
+    }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
+  S.indivSaving=false;b.disabled=false;b.textContent=b.getAttribute('data-lbl');
+  b.classList.toggle('dirty',!!S.indivDirty);
+}
+function onIndivSelect(){
+  if(S.indivSaving){toast('กำลังบันทึกอยู่ กรุณารอสักครู่',true);$('selIndiv').value=S.indivId;return;}
+  if(S.indivDirty&&!confirm('ข้อมูลคนนี้ยังไม่ได้บันทึก ต้องการเปลี่ยนไปคนอื่นและทิ้งข้อมูลหรือไม่?')){$('selIndiv').value=S.indivId;return;}
+  S.indivId=$('selIndiv').value;loadIndiv();
+}
+
+/* ---------- พิมพ์ ---------- */
+function doPrint(html,orient){
+  $('pageStyle').textContent='@page{size:A4 '+orient+';margin:'+(orient==='landscape'?'8mm 10mm':'10mm 14mm')+'}';
+  $('printRoot').innerHTML=html;
+  document.body.classList.add('printing');
+  setTimeout(function(){window.print();},120);
+}
+window.addEventListener('afterprint',function(){document.body.classList.remove('printing');$('printRoot').innerHTML='';});
+function pHead(title){
+  var s=S.settings;
+  return '<div class="p-title">'+esc(title)+'</div><div class="p-sub">'+esc(roomFull(S.room))+' ประจำเดือน '+TH_MONTHS[S.period.month-1]+' '+esc(s.schoolName)+' ประจำปีการศึกษา '+S.period.year+'</div>';
+}
+function pSig(cls){
+  var s=S.settings,rm=curRoom(),dots='..........................................';
+  return '<div class="p-sig'+(cls?' '+cls:'')+'"><div>ลงชื่อ..........................................................ผู้บันทึก<br>('+esc(rm.teacher||dots)+')<br>'+esc(rm.pos||'ครูประจำชั้น')+'</div>'+
+    '<div>ลงชื่อ..........................................................ผู้ตรวจ<br>('+esc(s.directorName||dots)+')<br>'+esc(s.directorPos)+'</div></div>';
+}
+function buildLogPrint(type){
+  var mi=monthInfo(),rows=Math.max(MIN_ROWS,S.students.length),set=S.data[type];
+  var h=pHead(type==='milk'?'แบบบันทึกการดื่มนมของนักเรียน':'แบบบันทึกการแปรงฟันของนักเรียน');
+  h+='<table class="ptable"><colgroup><col style="width:9mm"><col style="width:52mm">';
+  mi.list.forEach(function(){h+='<col>';});
+  h+='<col style="width:11mm"><col style="width:16mm"></colgroup><thead><tr><th rowspan="2">เลขที่</th><th rowspan="2">ชื่อ – สกุล</th><th colspan="'+mi.days+'">'+(type==='milk'?'การดื่มนมประจำวันตลอดเดือน':'การแปรงฟันหลังอาหารกลางวันตลอดเดือน')+'</th><th rowspan="2">รวม</th><th rowspan="2">หมายเหตุ</th></tr><tr>';
+  mi.list.forEach(function(x){h+='<th class="'+dayCls(x)+'" style="font-size:7.5pt">'+TH_DOW[x.wd]+'<br>'+x.d+'</th>';});
+  h+='</tr></thead><tbody>';
+  for(var i=0;i<rows;i++){
+    var st=S.students[i],arr=st?(set[st.id]||[]):[];
+    h+='<tr><td>'+(st?st.no:'')+'</td><td class="nm">'+(st?esc(st.name):'')+'</td>';
+    mi.list.forEach(function(x){h+='<td class="'+dayCls(x)+'">'+(arr.indexOf(x.d)>=0?'✓':'')+'</td>';});
+    h+='<td>'+(st?countValid(arr,mi.days):'')+'</td><td></td></tr>';
+  }
+  return h+'</tbody></table>'+pSig();
+}
+function buildHealthPrint(){
+  var rows=Math.max(MIN_ROWS,S.students.length);
+  var h=pHead('แบบบันทึกการชั่งน้ำหนัก – ส่วนสูงของนักเรียน');
+  h+='<table class="ptable tall"><colgroup><col style="width:13mm"><col style="width:75mm"><col style="width:30mm"><col style="width:30mm"><col style="width:30mm"><col style="width:30mm"><col></colgroup>'+
+    '<thead><tr><th rowspan="2">เลขที่</th><th rowspan="2">ชื่อ – สกุล</th><th rowspan="2">น้ำหนัก<br>(ก.ก.)</th><th rowspan="2">ส่วนสูง<br>(ซม.)</th><th colspan="2">ภาวะโภชนาการ</th><th rowspan="2">หมายเหตุ</th></tr><tr><th>ตามเกณฑ์</th><th>ต่ำกว่าเกณฑ์</th></tr></thead><tbody>';
+  for(var i=0;i<rows;i++){
+    var st=S.students[i],v=st?(S.data.health[st.id]||{}):{},s=st?statusOf(st.id):null;
+    h+='<tr><td>'+(st?st.no:'')+'</td><td class="nm">'+(st?esc(st.name):'')+'</td><td>'+(v.w===undefined||v.w===''?'':esc(v.w))+'</td><td>'+(v.h===undefined||v.h===''?'':esc(v.h))+'</td><td>'+(s==='ok'?'✓':'')+'</td><td>'+((s==='vthin'||s==='thin')?'✓':'')+'</td><td>'+(s==='ok'?'':statusText(s))+'</td></tr>';
+  }
+  return h+'</tbody></table>'+pSig();
+}
+function bx(on){return '<span class="bx">'+(on?'✓':'')+'</span>';}
+function ul(t,w){return '<span class="ul" style="min-width:'+(w||30)+'mm">'+esc(t||'')+'</span>';}
+function opt(on,label){return '<span class="opt">'+bx(on)+esc(label)+'</span>';}
+function buildIndivPrint(){
+  var st=S.students.filter(function(s){return s.id===S.indivId;})[0];if(!st)return '';
+  var d=collectForm(),has=function(k,v){return Array.isArray(d[k])&&d[k].indexOf(v)>=0;};
+  var row=function(label,lines){return '<div class="pi-r"><span class="k">'+label+'</span><div>'+lines.map(function(l){return '<div class="ln">'+l+'</div>';}).join('')+'</div></div>';};
+  var chk=function(list,map){var x='';Object.keys(map).forEach(function(k){x+=opt(has(list,k),map[k]);});return x;};
+  var disease=function(no,label,mode,list,ill){
+    return row(no+' '+label,[opt(d[mode]==='none','ไม่มี'),opt(d[mode]==='has','มี คือ')+chk(list,DISEASES),opt(d[mode]==='ill','เคยป่วยเป็น')+ul(d[ill],90)]);
+  };
+  var h='<div class="pi"><div style="text-align:center;margin-bottom:4mm"><span class="pi-box">บันทึกสุขภาพนักเรียน</span></div>'+
+    '<div style="margin-bottom:3mm"><b>ชื่อ – นามสกุล:</b> '+ul(st.name,95)+' &nbsp; <b>ชื่อเล่น:</b> '+ul(st.nickname,30)+'</div>'+
+    row('1. ประวัติการคลอด',[opt(d.birth==='normal','ปกติ')+opt(d.birth==='abnormal','ไม่ปกติ')])+
+    row('2. สายตา',[opt(d.eye==='normal','ปกติ')+opt(d.eye==='abnormal','ไม่ปกติ')])+
+    row('3. การเริ่มพูด',[opt(d.speech==='normal','ปกติ (ภายใน 1 ขวบ)')+opt(d.speech==='abnormal','ไม่ปกติ (หลัง 1 ขวบครึ่ง)')])+
+    row('4. การเริ่มเดิน',[opt(d.walk==='normal','ปกติ (ภายใน 1 ขวบครึ่ง)')+opt(d.walk==='abnormal','ไม่ปกติ (หลัง 1 ขวบครึ่ง)')])+
+    row('5. การผ่าตัด',[opt(d.surg==='none','ไม่มี'),opt(d.surg==='minor','ไม่รุนแรง คือ')+ul(d.surgMinor,30)+' '+opt(d.surg==='major','รุนแรง คือ')+ul(d.surgMajor,30)])+
+    '<div class="pi-r fw"><span class="k">6. ประสบอุบัติเหตุร้ายแรง คือ</span> '+ul(d.accident,70)+' เมื่อ '+ul(d.accidentDate,35)+'</div>'+
+    disease('7.1','โรคประจำตัว บิดา','fatherMode','fatherD','fatherIll')+
+    disease('7.2','โรคประจำตัว มารดา','motherMode','motherD','motherIll')+
+    disease('8.','โรคประจำตัว นักเรียน','stuMode','stuD','stuIll')+
+    row('9. การได้รับภูมิคุ้มกัน',[opt(has('vacc','dip'),VACC.dip)+opt(has('vacc','rub'),VACC.rub)+opt(has('vacc','per'),VACC.per)+opt(has('vacc','tet'),VACC.tet),
+      opt(has('vacc','pol'),VACC.pol)+opt(has('vacc','hep'),VACC.hep)+opt(has('vacc','bcg'),VACC.bcg)+opt(has('vacc','oth'),'อื่น ๆ')+ul(d.vaccOther,45)])+
+    '<div class="pi-r fw" style="margin-top:2mm">สถานพยาบาลที่มีประวัติการรักษาพยาบาลของนักเรียน หรือนักเรียนเข้ารับการรักษาพยาบาลเป็นประจำ คือ<br>'+ul(d.hospital,170)+'<br>โทรศัพท์ '+ul(d.hospitalTel,60)+'</div>'+
+    '<div style="margin:12mm 0 0 60mm;text-align:center;line-height:1.7">ลงชื่อ..........................................................ผู้ให้ข้อมูล<br>(..........................................................)<br>วันที่........เดือน........................พ.ศ.............</div></div>';
+  return h;
+}
+
+/* ---------- พิมพ์หน้าสรุป (A4 แนวนอน) ---------- */
+var SUM_P1=18;
+function buildSummaryPrint(){
+  var mi=monthInfo(),n=S.students.length,keys=Object.keys(NUTRI);
+  var cnt={},tot={ชาย:0,หญิง:0,อื่น:0},un={ชาย:0,หญิง:0,อื่น:0};
+  keys.forEach(function(k){cnt[k]={ชาย:0,หญิง:0,อื่น:0};});
+  var tm=0,tb=0,data=S.students.map(function(st){
+    var g=normG(st.gender)||'อื่น',s=statusOf(st.id),v=S.data.health[st.id]||{};
+    var mk=countValid(S.data.milk[st.id]||[],mi.days),bk=countValid(S.data.brush[st.id]||[],mi.days);
+    tm+=mk;tb+=bk;tot[g]++;
+    if(NUTRI[s])cnt[s][g]++;else un[g]++;
+    return {st:st,s:s,w:v.w,h:v.h,mk:mk,bk:bk};
+  });
+  var sum=function(o){return o.ชาย+o.หญิง+o.อื่น;};
+  var avg=function(t){return n?(t/n).toFixed(1):'0';};
+  var low=sum(cnt.vthin)+sum(cnt.thin),hi=sum(cnt.plump)+sum(cnt.over)+sum(cnt.obese);
+  var card=function(t,v,u){return '<div class="sm-card"><small>'+t+'</small><b>'+v+'</b><span>'+(u||'')+'</span></div>';};
+  var left='<div class="sm-cards">'+
+    card('นักเรียนทั้งหมด',n,'คน (ชาย '+tot.ชาย+' · หญิง '+tot.หญิง+')')+
+    card('ตามเกณฑ์ (สมส่วน)',sum(cnt.ok),'คน')+
+    card('ต่ำกว่าเกณฑ์ (ผอม/ค่อนข้างผอม)',low,'คน')+
+    card('เกินเกณฑ์ (ท้วม/เริ่มอ้วน/อ้วน)',hi,'คน')+
+    card('ดื่มนมเฉลี่ย',avg(tm),'วัน (จาก '+mi.school+' วันเรียน)')+
+    card('แปรงฟันเฉลี่ย',avg(tb),'วัน (จาก '+mi.school+' วันเรียน)')+'</div>';
+  var evalTot=0;keys.forEach(function(k){evalTot+=sum(cnt[k]);});
+  var acc=0,stops=[];
+  keys.forEach(function(k){var a=acc/evalTot*360;acc+=sum(cnt[k]);var b=acc/evalTot*360;if(b>a)stops.push(NUTRI_COLORS[k]+' '+a.toFixed(2)+'deg '+b.toFixed(2)+'deg');});
+  var bg=evalTot?'conic-gradient('+stops.join(',')+')':'#ddd';
+  left+='<div class="sm-sec"><div class="sm-h">ภาวะโภชนาการ (น้ำหนักตามเกณฑ์ส่วนสูง)</div><div class="donut" style="background:'+bg+'"><i></i></div>'+
+    '<table class="ptable sm-cnt"><colgroup><col><col style="width:16mm"><col style="width:16mm"><col style="width:16mm"></colgroup><thead><tr><th>ระดับ</th><th>ชาย</th><th>หญิง</th><th>รวม</th></tr></thead><tbody>';
+  keys.forEach(function(k){left+='<tr><td class="l"><span class="sw" style="background:'+NUTRI_COLORS[k]+'"></span>'+NUTRI[k]+'</td><td>'+cnt[k].ชาย+'</td><td>'+cnt[k].หญิง+'</td><td>'+sum(cnt[k])+'</td></tr>';});
+  left+='<tr><td class="l">ยังไม่ได้ประเมิน</td><td>'+un.ชาย+'</td><td>'+un.หญิง+'</td><td>'+sum(un)+'</td></tr>'+
+    '<tr><th style="text-align:left;padding-left:2mm">รวม</th><th>'+tot.ชาย+'</th><th>'+tot.หญิง+'</th><th>'+n+'</th></tr></tbody></table></div>';
+  var mx=Math.max(1,mi.school);data.forEach(function(r){mx=Math.max(mx,r.mk,r.bk);});
+  var tbl=function(rows,barW){
+    var t='<table class="ptable cmp"><colgroup><col style="width:10mm"><col><col style="width:15mm"><col style="width:15mm"><col style="width:26mm"><col style="width:12mm"><col style="width:14mm"><col style="width:'+barW+'mm"></colgroup>'+
+      '<thead><tr><th>เลขที่</th><th>ชื่อ – สกุล</th><th>น้ำหนัก<br>(กก.)</th><th>ส่วนสูง<br>(ซม.)</th><th>ภาวะโภชนาการ</th><th>นม<br>(วัน)</th><th>แปรงฟัน<br>(วัน)</th><th>กราฟ</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      t+='<tr><td>'+r.st.no+'</td><td class="nm">'+esc(r.st.name)+'</td><td>'+(r.w===undefined||r.w===''?'':esc(r.w))+'</td><td>'+(r.h===undefined||r.h===''?'':esc(r.h))+'</td><td>'+esc(statusText(r.s))+'</td><td>'+r.mk+'</td><td>'+r.bk+'</td><td class="bc"><div class="b1" style="width:'+(r.mk/mx*100)+'%"></div><div class="b2" style="width:'+(r.bk/mx*100)+'%"></div></td></tr>';
+    });
+    return t+'</tbody></table>';
+  };
+  var legend='<span class="sm-lg"><span class="sw" style="background:#1f4e79"></span>ดื่มนม &nbsp;<span class="sw" style="background:#5aa9d6"></span>แปรงฟัน</span>';
+  var first=data.slice(0,SUM_P1),rest=data.slice(SUM_P1);
+  var h=pHead('สรุปผลภาวะสุขภาพและกิจวัตรประจำวันของนักเรียน');
+  h+='<div class="sm-p1"><div class="sm-left">'+left+'</div><div class="sm-right"><div class="sm-h">รายชื่อนักเรียน (จาก '+mi.school+' วันเรียน)'+legend+'</div>'+tbl(first,30)+'</div></div>';
+  if(rest.length)h+='<div class="sm-more"><div class="sm-h">รายชื่อนักเรียน (ต่อ)'+legend+'</div>'+tbl(rest,70)+'</div>';
+  return h+pSig('tight');
+}
+function buildAllPrint(){
+  return [buildSummaryPrint(),buildLogPrint('milk'),buildLogPrint('brush'),buildHealthPrint(),buildCheckPrint()].map(function(h,i){return '<div class="'+(i?'pgb':'')+'">'+h+'</div>';}).join('');
+}
+
+/* ---------- ตั้งค่า ---------- */
+var SET_KEYS=['schoolName','academicYear','startMonth','currentMonth','directorName','directorPos'];
+var NUM_KEYS={academicYear:1,startMonth:1,currentMonth:1};
+function renderSettings(){
+  SET_KEYS.forEach(function(k){var el=$('set_'+k);if(el)el.value=S.settings[k]===undefined?'':S.settings[k];});
+  renderRoomEditor();renderRosterEditor();renderHolidayEditor();
+}
+async function saveSettingsUI(){
+  var o={};
+  SET_KEYS.forEach(function(k){var v=$('set_'+k).value;o[k]=NUM_KEYS[k]?Number(v):v;});
+  if(!(o.academicYear>2400&&o.academicYear<2700)){toast('ปีการศึกษาต้องเป็น พ.ศ. เช่น 2569',true);return;}
+  try{
+    var r=await api('saveSettings',o);
+    if(r&&r.success){S.settings=r.settings;S.pcache={};
+      S.period=todayPeriod();
+      buildPeriodSelectors();renderSettings();toast(r.message);await loadPeriod();populateGrowthSelect();}
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
+}
+function rosterRowHtml(s){
+  s=s||{id:'',name:'',nickname:'',gender:'',birth:''};
+  return '<tr data-oid="'+esc(s.id)+'"><td class="rn full"></td><td class="o1" data-l="รหัส"><input data-f="id" value="'+esc(s.id)+'"></td><td class="full o2" data-l="ชื่อ - สกุล"><input data-f="name" value="'+esc(s.name)+'"></td><td class="o3" data-l="ชื่อเล่น"><input data-f="nickname" value="'+esc(s.nickname)+'"></td>'+
+    '<td class="o1" data-l="เพศ"><select data-f="gender"><option value=""></option><option'+(s.gender==='ชาย'?' selected':'')+'>ชาย</option><option'+(s.gender==='หญิง'?' selected':'')+'>หญิง</option></select></td>'+
+    '<td class="o3" data-l="วันเกิด"><input type="date" data-f="birth" value="'+esc(s.birth)+'"></td><td class="del"><button class="btn sm" data-del="1" title="ลบ">✕</button></td></tr>';
+}
+function renumberRoster(){$('rosterTbl').querySelectorAll('tbody tr').forEach(function(tr,i){tr.querySelector('.rn').textContent=i+1;});}
+function renderRosterEditor(){
+  S.rosterDirty=false;
+  $('rosterTitle').textContent='รายชื่อนักเรียน · ห้อง '+S.room;
+  $('rosterTbl').querySelector('tbody').innerHTML=S.students.map(rosterRowHtml).join('');renumberRoster();
+}
+function collectRoster(){
+  var out=[];
+  $('rosterTbl').querySelectorAll('tbody tr').forEach(function(tr){
+    var o={};tr.querySelectorAll('[data-f]').forEach(function(el){o[el.getAttribute('data-f')]=el.value;});out.push(o);
+  });
+  return out;
+}
+async function saveRosterUI(){
+  var rows=collectRoster(),seen={};
+  for(var i=0;i<rows.length;i++){
+    var id=String(rows[i].id||'').trim();
+    if(id){if(seen[id]){toast('รหัสประจำตัว "'+id+'" ซ้ำกัน',true);return;}seen[id]=1;}
+  }
+  try{
+    var r=await api('saveRoster',rows,S.room,S.revs[S.room]||'');
+    if(r&&r.success){S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};setRoom(S.room);toast(r.message);renderRosterEditor();renderAll();populateIndivSelect();populateGrowthSelect();}
+    else if(r&&r.conflict){
+      if(confirm('มีผู้ใช้อื่นแก้ไข/ลบรายชื่อห้องนี้ไปก่อนหน้าคุณ จึงยังไม่ได้บันทึกอะไร\n\nกด ตกลง = โหลดรายชื่อล่าสุด (สิ่งที่คุณพิมพ์ในตารางจะถูกแทนที่)\nกด ยกเลิก = เก็บสิ่งที่พิมพ์ไว้ในตารางก่อน (ยังบันทึกไม่ได้จนกว่าจะโหลดรายชื่อล่าสุด)')){
+        S.allStudents=r.students;S.revs=r.revs||S.revs;S.pcache={};setRoom(S.room);renderRosterEditor();renderAll();populateIndivSelect();populateGrowthSelect();toast('โหลดรายชื่อล่าสุดแล้ว');
+      }
+    }else toast((r&&r.message)||'บันทึกไม่สำเร็จ',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
+}
+async function deleteStudentUI(id){
+  if(S.rosterDirty){toast('มีการแก้ไขตารางรายชื่อที่ยังไม่ได้บันทึก — กด "บันทึกรายชื่อ" ก่อน แล้วจึงลบนักเรียน',true);return;}
+  if(anyDirty()||anySaving()||S.indivDirty||S.indivSaving){toast('มีข้อมูลประจำวัน/ประวัติที่ยังไม่ได้บันทึก — บันทึกก่อน แล้วจึงลบนักเรียน',true);return;}
+  var p;
+  try{p=await api('previewDeleteStudent',id);}catch(e){toast('ตรวจสอบข้อมูลที่เกี่ยวข้องไม่สำเร็จ: '+errMsg(e),true);return;}
+  var c=p.counts||{},total=(c.milk||0)+(c.brush||0)+(c.health||0)+(c.check||0)+(c.indiv||0);
+  var msg='ลบนักเรียน "'+p.name+'" (ห้อง '+p.room+') ออกจากระบบถาวร?\n\n';
+  msg+=total?('ข้อมูลที่จะถูกลบออกจาก Google Sheets ไปพร้อมกัน:\n• ดื่มนม '+(c.milk||0)+' เดือน\n• แปรงฟัน '+(c.brush||0)+' เดือน\n• น้ำหนัก-ส่วนสูง '+(c.health||0)+' เดือน\n• ตรวจสุขภาพ '+(c.check||0)+' เดือน\n• ประวัติสุขภาพรายบุคคล '+(c.indiv||0)+' รายการ\n\n'):'ไม่พบข้อมูลอื่นที่ผูกกับนักเรียนคนนี้\n\n';
+  msg+='ลบแล้วกู้คืนได้เฉพาะจาก "ประวัติเวอร์ชัน" ของ Google Sheets เท่านั้น';
+  if(total){var t=prompt(msg+'\n\nพิมพ์คำว่า  ลบ  เพื่อยืนยัน');if(t===null||t.trim()!=='ลบ'){toast('ยกเลิกการลบ — ไม่มีข้อมูลถูกลบ');return;}}
+  else if(!confirm(msg))return;
+  try{
+    var r=await api('deleteStudent',id,true);
+    if(r&&r.success){
+      S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};delete S.icache[id];if(S.indivId===id)S.indivId=null;
+      setRoom(S.room);toast(r.message);renderRosterEditor();await loadPeriod({force:true});populateIndivSelect();populateGrowthSelect();buildReportFilters();
+    }else toast((r&&r.message)||'ลบไม่สำเร็จ',true);
+  }catch(e){toast('ลบไม่สำเร็จ: '+errMsg(e)+' (ตรวจสอบรายชื่อแล้วลองใหม่ได้)',true);}
+}
+
+function roomRowHtml(r){
+  r=r||{name:'',level:'ป.1',suffix:'',teacher:'',pos:''};
+  var key=r.name||(r.level+(r.suffix?'/'+r.suffix:''));
+  var opts=LEVELS.map(function(l){return '<option'+(l===r.level?' selected':'')+'>'+l+'</option>';}).join('');
+  return '<tr data-old="'+esc(r.name)+'" data-auto="'+esc(autoPos(key))+'"><td data-l="ระดับชั้น"><select data-f="level">'+opts+'</select></td><td data-l="เลขห้อง (เว้นว่างได้)"><input data-f="suffix" value="'+esc(r.suffix||'')+'" placeholder="เช่น 1"></td><td class="rfull full" data-l="ชื่อเต็ม (อัตโนมัติ)">'+esc(roomFull(key))+'</td><td class="full" data-l="ครูประจำชั้น"><input data-f="teacher" value="'+esc(r.teacher)+'"></td><td class="full" data-l="ตำแหน่ง"><input data-f="pos" value="'+esc(r.pos||autoPos(key))+'"></td><td class="del"><button class="btn sm" data-del="1">✕</button></td></tr>';
+}
+function onRoomEdit(e){
+  var tr=e.target.closest('tr'),f=e.target.getAttribute&&e.target.getAttribute('data-f');
+  if(!tr||(f!=='level'&&f!=='suffix'))return;
+  var lv=tr.querySelector('[data-f=level]').value,sfx=tr.querySelector('[data-f=suffix]').value.trim().replace(/^\//,'');
+  var key=lv+(sfx?'/'+sfx:''),pos=tr.querySelector('[data-f=pos]');
+  tr.querySelector('.rfull').textContent=roomFull(key);
+  if(!pos.value.trim()||pos.value===tr.getAttribute('data-auto'))pos.value=autoPos(key);
+  tr.setAttribute('data-auto',autoPos(key));
+}
+function renderRoomEditor(){$('roomTbl').querySelector('tbody').innerHTML=S.rooms.map(roomRowHtml).join('');}
+async function saveRoomsUI(){
+  var rows=[],seen={},bad=false;
+  $('roomTbl').querySelectorAll('tbody tr').forEach(function(tr){
+    var o={old:tr.getAttribute('data-old')||''};
+    tr.querySelectorAll('[data-f]').forEach(function(el){o[el.getAttribute('data-f')]=el.value;});
+    o.suffix=String(o.suffix||'').trim().replace(/^\//,'');
+    o.name=o.level+(o.suffix?'/'+o.suffix:'');
+    if(seen[o.name])bad=true;seen[o.name]=1;rows.push(o);
+  });
+  if(bad){toast('มีห้องซ้ำกัน (ระดับชั้น + เลขห้องเหมือนกัน)',true);return;}
+  if(!rows.length){toast('ต้องมีอย่างน้อย 1 ห้อง',true);return;}
+  try{
+    var r=await api('saveRooms',rows);
+    if(r&&r.success){
+      var cur=S.room,renamed=rows.filter(function(x){return x.old===cur;})[0];
+      S.rooms=r.rooms;S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};
+      setRoom(renamed?renamed.name:cur);
+      toast(r.message);renderRoomEditor();renderRosterEditor();renderAll();populateIndivSelect();populateGrowthSelect();buildReportFilters();
+    }else toast((r&&r.message)||'บันทึกไม่สำเร็จ',true);
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
+}
+async function clearIndiv(){
+  if(!S.indivId){toast('ยังไม่ได้เลือกนักเรียน',true);return;}
+  var st=S.students.filter(function(x){return x.id===S.indivId;})[0];
+  if(!confirm('ล้างแบบประวัติสุขภาพของ "'+(st?st.name:'')+'" ทั้งหมด?\n(ไม่กระทบข้อมูลดื่มนม แปรงฟัน น้ำหนัก-ส่วนสูง)'))return;
+  try{
+    var r=await api('clearIndividual',S.indivId);
+    if(r&&r.success){delete S.icache[S.indivId];fillForm({});S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');toast(r.message);}
+    else toast((r&&r.message)||'ล้างไม่สำเร็จ',true);
+  }catch(e){toast('ล้างไม่สำเร็จ: '+errMsg(e),true);}
+}
+async function changeRoom(){
+  var want=$('selRoom').value;
+  if(anySaving()){toast('กำลังบันทึกข้อมูลอยู่ กรุณารอสักครู่ก่อนเปลี่ยนห้อง',true);$('selRoom').value=S.room;return;}
+  if((anyDirty()||S.indivDirty||S.rosterDirty)&&!confirm('มีข้อมูลที่ยังไม่ได้บันทึก ต้องการเปลี่ยนห้องและทิ้งข้อมูลนี้หรือไม่?')){$('selRoom').value=S.room;return;}
+  S.indivDirty=false;
+  setRoom(want);
+  await loadPeriod();
+  renderRosterEditor();populateIndivSelect();populateGrowthSelect();
+}
+
+/* ---------- นำเข้ารายชื่อ ---------- */
+var IMP={items:[]};
+var HMAP={
+  name:['ชื่อสกุล','ชื่อนามสกุล','ชื่อและนามสกุล','fullname','name'],
+  prefix:['คำนำหน้า','คำนำหน้าชื่อ','prefix'],
+  first:['ชื่อ','ชื่อต้น','ชื่อจริง','firstname'],
+  last:['นามสกุล','สกุล','lastname','surname'],
+  nick:['ชื่อเล่น','nickname'],
+  id:['รหัสประจำตัว','รหัสนักเรียน','รหัสประจำตัวนักเรียน','เลขประจำตัว','เลขประจำตัวนักเรียน','รหัส','id'],
+  gender:['เพศ','gender','sex'],
+  birth:['วันเกิด','วันเดือนปีเกิด','วดปเกิด','วันเดือนปีเกิด','birthdate','birthday','dob'],
+  w:['น้ำหนัก','weight'],h:['ส่วนสูง','height'],
+  note:['หมายเหตุ','note','remark'],
+  room:['ห้อง','ห้องเรียน','ชั้น','ระดับชั้น','ชั้นเรียน','class','room']
+};
+function normH(h){return String(h==null?'':h).replace(/\(.*?\)/g,'').replace(/[\s.\-_\/:]/g,'').toLowerCase();}
+function parseDelimited(text){
+  text=String(text||'').replace(/^﻿/,'');
+  var first=text.split(/\r?\n/)[0]||'';
+  var d=first.indexOf('\t')>=0?'\t':(first.indexOf(',')>=0?',':(first.indexOf(';')>=0?';':','));
+  var rows=[],row=[],cell='',q=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}
+    else if(c==='"')q=true;
+    else if(c===d){row.push(cell);cell='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}
+    else cell+=c;
+  }
+  if(cell!==''||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+function decodeBuf(buf){
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(buf);}
+  catch(e){try{return new TextDecoder('windows-874').decode(buf);}catch(e2){return new TextDecoder('utf-8').decode(buf);}}
+}
+function genderFromText(t){
+  t=String(t||'').trim();
+  if(/^(ชาย|ช|m|male|เด็กชาย|ด\.?ช\.?|นาย)$/i.test(t))return 'ชาย';
+  if(/^(หญิง|ญ|f|female|เด็กหญิง|ด\.?ญ\.?|นางสาว|น\.?ส\.?|นาง)$/i.test(t))return 'หญิง';
+  return '';
+}
+function genderFromName(n){
+  n=String(n||'').trim();
+  if(/^(เด็กชาย|ด\.ช\.?|ดญ\.?|นาย)/.test(n))return 'ชาย';
+  if(/^(เด็กหญิง|ด\.ญ\.?|ดญ\.?|นางสาว|น\.ส\.?|นส\.?|นาง)/.test(n))return 'หญิง';
+  return '';
+}
+function fixYMD(y,mo,d){
+  if(y>2400)y-=543;
+  var dt=new Date(y,mo-1,d);
+  if(mo<1||mo>12||dt.getMonth()!==mo-1||dt.getDate()!==d||y<1950||y>new Date().getFullYear())return {err:true};
+  return {v:y+'-'+pad(mo)+'-'+pad(d)};
+}
+function parseBirth(v){
+  if(v===''||v==null)return {v:''};
+  if(typeof v==='number'){
+    if(v>10000&&v<80000){var d=new Date(Math.round((v-25569)*86400000));return fixYMD(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate());}
+    return {err:true};
+  }
+  var t=String(v).trim(),m;
+  if(!t)return {v:''};
+  if((m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return fixYMD(+m[1],+m[2],+m[3]);
+  if((m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/)))return fixYMD(+m[3],+m[2],+m[1]);
+  return {err:true};
+}
+function cellStr(v){return v==null?'':String(v).trim();}
+function buildImportItems(rows){
+  rows=rows.filter(function(r){return r.some(function(c){return cellStr(c)!=='';});});
+  if(rows.length<2)return {error:'ไม่พบข้อมูล (ต้องมีแถวหัวคอลัมน์ และอย่างน้อย 1 แถวข้อมูล)'};
+  var hdr=rows[0].map(normH),col={};
+  Object.keys(HMAP).forEach(function(k){
+    for(var i=0;i<hdr.length;i++){
+      if(HMAP[k].some(function(x){return normH(x)===hdr[i];})&&col[k]===undefined){col[k]=i;break;}
+    }
+  });
+  if(col.name===undefined&&col.first!==undefined&&col.last===undefined){col.name=col.first;delete col.first;}
+  if(col.name===undefined&&col.first===undefined)return {error:'ไม่พบคอลัมน์ "ชื่อ-สกุล" (หรือ ชื่อ + นามสกุล) ในแถวแรก'};
+  var get=function(r,k){return col[k]===undefined?'':r[col[k]];};
+  var items=[],seenKey={};
+  rows.slice(1).forEach(function(r,ix){
+    var it={row:ix+2,warn:[],err:''};
+    var name;
+    if(col.name!==undefined)name=cellStr(get(r,'name'));
+    else name=[cellStr(get(r,'prefix')),cellStr(get(r,'first')),cellStr(get(r,'last'))].filter(Boolean).join('');
+    if(col.name===undefined){
+      name=[cellStr(get(r,'prefix'))+cellStr(get(r,'first')),cellStr(get(r,'last'))].filter(Boolean).join(' ');
+    }
+    name=name.replace(/\s+/g,' ').trim();
+    if(!name){it.err='ไม่มีชื่อ';items.push(it);return;}
+    it.name=name;
+    it.id=cellStr(get(r,'id'));it.nickname=cellStr(get(r,'nick'));it.note=cellStr(get(r,'note'));
+    var rawRoom=cellStr(get(r,'room'));it.room='';
+    if(rawRoom){var pr=parseRoom(rawRoom);if(!pr){it.err='อ่านห้อง "'+rawRoom+'" ไม่ออก — ระบุเช่น อ.2, ป.3/1, ชั้นอนุบาลปีที่ 2 (ตัวเลขอย่างเดียวอย่าง 3/1 ไม่ได้ เพราะไม่รู้ว่า ป. หรือ อ.)';items.push(it);return;}it.room=pr.key;}
+    var g=genderFromText(get(r,'gender'));
+    if(!g&&col.gender!==undefined&&cellStr(get(r,'gender')))it.warn.push('อ่านเพศไม่ออก');
+    if(!g)g=genderFromName(cellStr(get(r,'prefix'))||name);
+    if(!g&&!it.warn.length)it.warn.push('ระบุเพศไม่ได้ (ประเมินภาวะโภชนาการไม่ได้จนกว่าจะระบุ)');
+    it.gender=g;
+    var b=parseBirth(get(r,'birth'));
+    if(b.err){it.warn.push('วันเกิดอ่านไม่ได้ — ข้ามช่องนี้');it.birth='';}else it.birth=b.v;
+    var w=cellStr(get(r,'w')),hh=cellStr(get(r,'h'));
+    if(w!==''){var wn=parseFloat(w.replace(',','.'));if(isNaN(wn)||wn<5||wn>150){it.warn.push('น้ำหนักผิดปกติ — ข้ามช่องนี้');}else it.w=wn;}
+    if(hh!==''){var hn=parseFloat(hh.replace(',','.'));if(isNaN(hn)||hn<40||hn>200){it.warn.push('ส่วนสูงผิดปกติ — ข้ามช่องนี้');}else it.h=hn;}
+    var key=(it.id||'')+'|'+name;
+    if(seenKey[key])it.warn.push('ซ้ำกับแถว '+seenKey[key]+' ในไฟล์');else seenKey[key]=it.row;
+    items.push(it);
+  });
+  return {items:items,cols:col};
+}
+function classifyImport(it){
+  var def=S.room;
+  var all=S.allStudents,hit=null;
+  if(it.id)hit=all.filter(function(s){return s.id===it.id;})[0];
+  if(!hit)hit=all.filter(function(s){return s.name.replace(/\s+/g,' ').trim()===it.name;})[0];
+  return hit?'update':'new';
+}
+function previewImport(rows){
+  var res=buildImportItems(rows);
+  var box=$('impPreview');
+  IMP.items=[];$('btnImpGo').disabled=true;
+  if(res.error){box.innerHTML='<div class="banner" style="margin-top:8px">'+esc(res.error)+'</div>';return;}
+  var nNew=0,nUp=0,nSkip=0,nWarn=0,roomNew={};
+  var hasRoom=res.cols.room!==undefined;
+  var h='<table class="mini" style="margin-top:8px"><thead><tr><th>แถว</th><th>สถานะ</th><th>ห้อง</th><th>ชื่อ-สกุล</th><th>เพศ</th><th>วันเกิด</th><th>นน.</th><th>สส.</th><th>หมายเหตุ/คำเตือน</th></tr></thead><tbody>';
+  res.items.forEach(function(it,i){
+    if(it.err){nSkip++;h+='<tr><td>'+it.row+'</td><td class="e">ข้าม</td><td colspan="7" class="e">'+esc(it.err)+'</td></tr>';return;}
+    var room=it.room||S.room;
+    if(S.me.role!=='admin'&&!S.rooms.some(function(r){return r.name===room;})){nSkip++;h+='<tr><td>'+it.row+'</td><td class="e">ข้าม</td><td colspan="7" class="e">ไม่มีสิทธิ์ในห้อง "'+esc(room)+'" (นำเข้าได้เฉพาะห้องที่ได้รับสิทธิ์)</td></tr>';return;}
+    var st=classifyImport(it);if(st==='new')nNew++;else nUp++;
+    if(it.warn.length)nWarn++;
+    if(!S.rooms.some(function(r){return r.name===room;}))roomNew[room]=1;
+    IMP.items.push(it);
+    if(i<300)h+='<tr><td>'+it.row+'</td><td>'+(st==='new'?'เพิ่มใหม่':'อัปเดต')+'</td><td>'+esc(room)+'</td><td>'+esc(it.name)+'</td><td>'+esc(it.gender)+'</td><td>'+esc(it.birth)+'</td><td>'+(it.w===undefined?'':it.w)+'</td><td>'+(it.h===undefined?'':it.h)+'</td><td class="w">'+esc(it.warn.join(' · '))+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  var rn=Object.keys(roomNew);
+  var head='<div class="banner" style="margin-top:8px">พบ '+res.items.length+' แถว: <b>เพิ่มใหม่ '+nNew+'</b> · <b>อัปเดต '+nUp+'</b> · ข้าม '+nSkip+' · มีคำเตือน '+nWarn+
+    (rn.length?'<br>จะสร้างห้องใหม่อัตโนมัติ: <b>'+rn.map(esc).join(', ')+'</b> (ตรวจระดับชั้นและครูได้ที่ "ห้องเรียนและครูประจำชั้น")':'')+
+    (hasRoom?'':'<br>ไม่มีคอลัมน์ "ห้อง" — ทุกแถวจะเข้าห้อง <b>'+esc(S.room)+'</b>')+
+    '<br>น้ำหนัก/ส่วนสูงที่มีในไฟล์ จะบันทึกลง '+periodLabel()+'</div>';
+  box.innerHTML=head+h;
+  $('btnImpGo').disabled=IMP.items.length===0;
+}
+async function runImport(){
+  if(!IMP.items.length)return;
+  var items=IMP.items.map(function(it){return {room:it.room,id:it.id,name:it.name,nickname:it.nickname,gender:it.gender,birth:it.birth,note:it.note,w:it.w,h:it.h};});
+  try{
+    var r=await api('importStudents',items,S.room,S.period.year,S.period.month);
+    if(r&&r.success){
+      S.rooms=r.rooms;S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};setRoom(S.room);
+      IMP.items=[];$('btnImpGo').disabled=true;
+      $('impPreview').innerHTML='<div class="banner" style="margin-top:8px">นำเข้าเสร็จแล้ว: เพิ่มใหม่ '+r.added+' · อัปเดต '+r.updated+' · น้ำหนัก/ส่วนสูง '+r.health+' คน'+(r.denied?' · ข้าม '+r.denied+' แถว (ไม่มีสิทธิ์ในห้องนั้น)':'')+(r.newRooms&&r.newRooms.length?' · สร้างห้องใหม่ '+r.newRooms.map(esc).join(', '):'')+'</div>';
+      $('impText').value='';$('impFile').value='';
+      renderRoomEditor();renderRosterEditor();await loadPeriod({force:true});populateIndivSelect();populateGrowthSelect();buildReportFilters();
+    }else toast((r&&r.message)||'นำเข้าไม่สำเร็จ',true);
+  }catch(e){toast('นำเข้าไม่สำเร็จ: '+errMsg(e),true);}
+}
+function readImportFile(f){
+  if(!f)return;
+  var ext=(f.name.split('.').pop()||'').toLowerCase(),fr=new FileReader();
+  fr.onload=function(){
+    try{
+      if(ext==='xlsx'||ext==='xls'){
+        if(typeof XLSX==='undefined'){toast('โหลดตัวอ่าน Excel ไม่สำเร็จ — ให้บันทึกเป็น CSV หรือคัดลอกมาวางในช่องแทน',true);return;}
+        var wb=XLSX.read(fr.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
+        previewImport(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}));
+      }else{
+        var t=decodeBuf(fr.result);$('impText').value=t;previewImport(parseDelimited(t));
+      }
+    }catch(e){toast('อ่านไฟล์ไม่สำเร็จ: '+errMsg(e),true);}
+  };
+  fr.readAsArrayBuffer(f);
+}
+function downloadTemplate(){
+  var csv='﻿คำนำหน้า,ชื่อ,นามสกุล,ชื่อเล่น,รหัสประจำตัว,เพศ,วันเกิด,น้ำหนัก,ส่วนสูง,หมายเหตุ,ห้อง\r\n'+
+    'เด็กชาย,สมชาย,ใจดี,ชาย,,,15/03/2562,15.2,98,,อ.2\r\n'+
+    'เด็กหญิง,สมหญิง,รักเรียน,หญิง,,,02/11/2562,,,,อ.2\r\n';
+  csv=csv.replace('สมชาย,ใจดี,ชาย,,,','สมชาย,ใจดี,ชาย,,,');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='แบบฟอร์มนำเข้ารายชื่อนักเรียน.csv';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+
+/* ---------- เลื่อนชั้น ---------- */
+var LEVELS=['อ.1','อ.2','อ.3','ป.1','ป.2','ป.3','ป.4','ป.5','ป.6'];
+function nextLevel(l){var i=LEVELS.indexOf(l);return (i>=0&&i+1<LEVELS.length)?LEVELS[i+1]:null;}
+function promotePlan(){
+  var plan=S.rooms.map(function(r){
+    var nl=nextLevel(r.level),p=parseRoom(r.name),sfx=p?p.suffix:'';
+    return {old:r.name,level:r.level,nl:nl,nn:nl?nl+(sfx?'/'+sfx:''):r.name,grad:!nl,n:S.allStudents.filter(function(x){return x.room===r.name;}).length};
+  });
+  var seen={};plan.forEach(function(p){if(!p.grad){if(seen[p.nn])p.nn=p.old;seen[p.nn]=1;}});
+  return plan;
+}
+function showPromote(){
+  if(anyDirty()||S.indivDirty){toast('มีข้อมูลที่ยังไม่ได้บันทึก กรุณาบันทึกก่อน',true);return;}
+  var y=S.settings.academicYear,plan=promotePlan(),hasGrad=plan.some(function(p){return p.grad;});
+  var h='<div class="banner"><b>ก่อนกดยืนยัน:</b> ควรทำสำเนาไฟล์ Google Sheet เก็บไว้ก่อน (ไฟล์ → สร้างสำเนา) เพื่อเก็บภาพของปีการศึกษา '+y+'</div>'+
+    '<p>ปีการศึกษา <b>'+y+' → '+(y+1)+'</b> · เดือนจะกลับไปเป็น '+TH_MONTHS[(S.settings.startMonth||5)-1]+'</p>'+
+    '<table class="mini"><thead><tr><th>ห้องเดิม</th><th>ห้องใหม่</th><th>ระดับชั้น</th><th>นักเรียน</th></tr></thead><tbody>'+
+    plan.map(function(p){return '<tr><td>'+esc(roomFull(p.old))+'</td><td>'+(p.grad?'<span class="w">ป.6 — ไม่มีชั้นถัดไป (จบการศึกษา)</span>':esc(roomFull(p.nn)))+'</td><td>'+esc(p.level)+(p.grad?'':' → '+esc(p.nl))+'</td><td>'+p.n+' คน</td></tr>';}).join('')+'</tbody></table>';
+  if(hasGrad)h+='<p><label><input type="checkbox" id="promRemove" checked> ลบรายชื่อนักเรียน ป.6 ที่จบการศึกษาออกจากระบบ (ข้อมูลน้ำหนัก นม แปรงฟันของปีเก่ายังอยู่ในชีต แต่จะไม่แสดงในแอป)</label></p>';
+  h+='<div class="bar"><button class="btn pri" id="btnPromoteGo">ยืนยันเลื่อนชั้น</button><button class="btn" id="btnPromoteCancel">ยกเลิก</button></div>';
+  $('promoteBox').innerHTML=h;
+}
+async function runPromote(){
+  var y=S.settings.academicYear,rm=$('promRemove');
+  if(!confirm('ยืนยันเลื่อนชั้นจากปีการศึกษา '+y+' เป็น '+(y+1)+' ? การกระทำนี้ไม่ควรกดซ้ำ'))return;
+  try{
+    var r=await api('promoteYear',y,rm?rm.checked:false);
+    if(r&&r.success){
+      S.settings=r.settings;S.rooms=r.rooms;S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};
+      S.period={year:S.settings.academicYear,month:S.settings.currentMonth};
+      setRoom(S.room);buildPeriodSelectors();renderSettings();
+      $('promoteBox').innerHTML='<div class="banner">'+esc(r.message)+(r.removed?' · ลบรายชื่อ ป.6 '+r.removed+' คน':'')+' — ตรวจชื่อห้อง ชื่อครู และเพิ่มนักเรียนใหม่ได้ด้านล่าง</div>';
+      toast(r.message);await loadPeriod();populateIndivSelect();populateGrowthSelect();
+    }else toast((r&&r.message)||'เลื่อนชั้นไม่สำเร็จ',true);
+  }catch(e){toast('เลื่อนชั้นไม่สำเร็จ: '+errMsg(e),true);}
+}
+
+function holRowHtml(h){
+  h=h||{date:'',name:'',open:false};
+  return '<tr><td data-l="วันที่"><input type="date" data-f="date" value="'+esc(h.date)+'"></td><td class="full" data-l="ชื่อวันหยุด"><input data-f="name" value="'+esc(h.name)+'"></td>'+
+    '<td class="full"><label><input type="checkbox" data-f="open"'+(h.open?' checked':'')+' style="width:auto"> เปิดสอนพิเศษ</label></td><td class="del"><button class="btn sm" data-del="1">✕</button></td></tr>';
+}
+function renderHolidayEditor(){
+  $('holTbl').querySelector('tbody').innerHTML=S.holidayList.map(holRowHtml).join('');
+}
+var FIXED_HOL=[[1,1,'วันขึ้นปีใหม่'],[4,6,'วันจักรี'],[4,13,'วันสงกรานต์'],[4,14,'วันสงกรานต์'],[4,15,'วันสงกรานต์'],[5,1,'วันแรงงานแห่งชาติ'],[5,4,'วันฉัตรมงคล'],[7,28,'วันเฉลิมพระชนมพรรษา ร.10'],[8,12,'วันแม่แห่งชาติ'],[10,13,'วันนวมินทรมหาราช'],[10,23,'วันปิยมหาราช'],[12,5,'วันพ่อแห่งชาติ'],[12,10,'วันรัฐธรรมนูญ'],[12,31,'วันสิ้นปี']];
+function addFixedHolidays(){
+  var sm=S.settings.startMonth||5,y=S.settings.academicYear,have={};
+  var tb=$('holTbl').querySelector('tbody');
+  tb.querySelectorAll('[data-f=date]').forEach(function(i){have[i.value]=1;});
+  var add=0;
+  FIXED_HOL.forEach(function(f){
+    var yr=(f[0]>=sm)?y-543:y-543+1,date=yr+'-'+pad(f[0])+'-'+pad(f[1]);
+    if(have[date])return;
+    tb.insertAdjacentHTML('beforeend',holRowHtml({date:date,name:f[2],open:false}));add++;
+  });
+  toast(add?('เพิ่ม '+add+' วัน — กด "บันทึกวันหยุด" เพื่อยืนยัน'):'มีครบแล้ว');
+}
+async function saveHolUI(){
+  var rows=[];
+  $('holTbl').querySelectorAll('tbody tr').forEach(function(tr){
+    rows.push({date:tr.querySelector('[data-f=date]').value,name:tr.querySelector('[data-f=name]').value,open:tr.querySelector('[data-f=open]').checked});
+  });
+  try{
+    var r=await api('saveHolidays',rows);
+    if(r&&r.success){
+      S.holidayList=r.holidays;S.holidays={};
+      S.holidayList.forEach(function(h){if(!h.open)S.holidays[h.date]=h.name||'วันหยุด';});
+      toast(r.message);renderHolidayEditor();renderLog('milk');renderLog('brush');renderDash();
+    }
+  }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
+}
+
+/* ---------- ผูกเหตุการณ์ ---------- */
+function bindUI(){
+  bindAuthUI();
+  $('mainTabs').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    S.tab=b.getAttribute('data-tab');
+    document.querySelectorAll('#mainTabs button').forEach(function(x){x.classList.toggle('on',x===b);});
+    document.querySelectorAll('section.tab').forEach(function(x){x.classList.toggle('on',x.id==='tab-'+S.tab);});
+    if(S.tab==='dash')renderDash();
+    if(S.tab==='report')renderReport();
+    if(S.tab==='users')loadUsers();
+  });
+  $('subPills').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    S.sub=b.getAttribute('data-sub');
+    document.querySelectorAll('#subPills button').forEach(function(x){x.classList.toggle('on',x===b);});
+    document.querySelectorAll('.sub').forEach(function(x){x.classList.toggle('on',x.id==='sub-'+S.sub);});
+  });
+  $('selRoom').addEventListener('change',changeRoom);
+  $('btnPrintAll').addEventListener('click',function(){doPrint(buildAllPrint(),'landscape');});
+  $('roomTbl').addEventListener('input',onRoomEdit);$('roomTbl').addEventListener('change',onRoomEdit);
+  $('btnClear-indiv').addEventListener('click',clearIndiv);
+  $('btnAddRoom').addEventListener('click',function(){$('roomTbl').querySelector('tbody').insertAdjacentHTML('beforeend',roomRowHtml());});
+  $('btnSaveRooms').addEventListener('click',saveRoomsUI);
+  $('roomTbl').addEventListener('click',function(e){var b=e.target.closest('[data-del]');if(b)b.closest('tr').remove();});
+  $('btnPromote').addEventListener('click',showPromote);
+  $('promoteBox').addEventListener('click',function(e){
+    if(e.target.id==='btnPromoteGo')runPromote();
+    if(e.target.id==='btnPromoteCancel')$('promoteBox').innerHTML='';
+  });
+  $('btnTemplate').addEventListener('click',downloadTemplate);
+  $('impFile').addEventListener('change',function(e){readImportFile(e.target.files[0]);});
+  $('btnImpCheck').addEventListener('click',function(){var t=$('impText').value;if(!t.trim()){toast('วางข้อมูลหรือเลือกไฟล์ก่อน',true);return;}previewImport(parseDelimited(t));});
+  $('btnImpGo').addEventListener('click',runImport);
+  $('selYear').addEventListener('change',changePeriod);
+  $('selMonth').addEventListener('change',changePeriod);
+  ['milk','brush'].forEach(function(t){
+    $('tbl-'+t).addEventListener('click',function(e){
+      var td=e.target.closest('td.dc');if(td){toggleCell(t,td);return;}
+      var th=e.target.closest('th.dh');if(th)toggleDay(t,+th.getAttribute('data-d'));
+    });
+    $('btnSave-'+t).addEventListener('click',function(){saveLog(t);});
+    $('btnPrint-'+t).addEventListener('click',function(){doPrint(buildLogPrint(t),'landscape');});
+  });
+  $('tbl-check').addEventListener('click',function(e){
+    var td=e.target.closest('td.kc');if(td){ckClick(td);return;}
+    var th=e.target.closest('th.ch');if(th)ckHead(+th.getAttribute('data-k'));
+  });
+  $('btnSave-check').addEventListener('click',saveCheck);
+  $('btnPrint-check').addEventListener('click',function(){doPrint(buildCheckPrint(),'landscape');});
+  $('tbl-health').addEventListener('input',onHealthInput);
+  $('btnSave-health').addEventListener('click',saveHealth);
+  $('btnPrint-dash').addEventListener('click',function(){doPrint(buildSummaryPrint(),'landscape');});
+  $('btnPrint-health').addEventListener('click',function(){doPrint(buildHealthPrint(),'landscape');});
+  $('selIndiv').addEventListener('change',onIndivSelect);
+  $('indivForm').addEventListener('input',function(){S.indivDirty=true;$('btnSave-indiv').classList.add('dirty');});
+  $('indivForm').addEventListener('change',function(){S.indivDirty=true;$('btnSave-indiv').classList.add('dirty');});
+  $('btnSave-indiv').addEventListener('click',saveIndiv);
+  $('btnPrint-indiv').addEventListener('click',function(){var h=buildIndivPrint();if(h)doPrint(h,'portrait');});
+  $('selGrowth').addEventListener('change',loadGrowth);
+  $('btnSaveSettings').addEventListener('click',saveSettingsUI);
+  $('btnAddStu').addEventListener('click',function(){$('rosterTbl').querySelector('tbody').insertAdjacentHTML('beforeend',rosterRowHtml());renumberRoster();S.rosterDirty=true;});
+  $('btnSaveRoster').addEventListener('click',saveRosterUI);
+  $('rosterTbl').addEventListener('click',function(e){
+    var b=e.target.closest('[data-del]');if(!b)return;
+    var tr=b.closest('tr'),oid=tr.getAttribute('data-oid');
+    if(oid){deleteStudentUI(oid);return;}
+    tr.remove();renumberRoster();S.rosterDirty=true;
+  });
+  $('rosterTbl').addEventListener('input',function(){S.rosterDirty=true;});
+  $('rosterTbl').addEventListener('change',function(){S.rosterDirty=true;});
+  $('btnAddHol').addEventListener('click',function(){$('holTbl').querySelector('tbody').insertAdjacentHTML('beforeend',holRowHtml());});
+  $('btnSaveHol').addEventListener('click',saveHolUI);
+  $('btnFixedHol').addEventListener('click',addFixedHolidays);
+  $('holTbl').addEventListener('click',function(e){var b=e.target.closest('[data-del]');if(b)b.closest('tr').remove();});
+  window.addEventListener('beforeunload',function(e){if(anyDirty()||S.indivDirty||anySaving()||S.rosterDirty){e.preventDefault();e.returnValue='';}});
+}
+</script>
 </body>
 </html>
