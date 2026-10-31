@@ -139,7 +139,7 @@ body.ro .dc,body.ro th.dh,body.ro .kc,body.ro th.ch{cursor:default}
   .ptable .hol{background:#cfcfcf}
   .ptable thead{display:table-header-group}
   .ptable tr{page-break-inside:avoid}
-  .p-sig{display:flex;justify-around;margin-top:8mm;text-align:center;font-size:11pt;line-height:1.5;page-break-inside:avoid}
+  .p-sig{display:flex;justify-content:space-around;margin-top:8mm;text-align:center;font-size:11pt;line-height:1.5;page-break-inside:avoid}
   .pi{font-size:11.5pt;line-height:1.5}
   .pi-box{display:inline-block;border:1.5pt solid #000;border-radius:5px;padding:1mm 10mm;font-weight:700;font-size:16pt}
   .pi-r{display:grid;grid-template-columns:47mm 1fr;padding:1.1mm 0;border-bottom:.5pt dotted #777}
@@ -379,9 +379,6 @@ body.ro .dc,body.ro th.dh,body.ro .kc,body.ro th.ch{cursor:default}
 <div id="toast"></div>
 
 <script>
-// ⚠️ ระบุ URL ของ Google Apps Script Web App ที่ Deploy สิทธิ์เป็น Anyone
-var GAS_URL = "https://script.google.com/macros/s/AKfycbwBMT2ldu-kFkqaeK9Jnx98dU3tqjbu2OZhlOquFw3VendF3FupgWzS5nWarX__M1ec/exec";
-
 var TH_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 var TH_DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
 var MIN_ROWS=15;
@@ -401,47 +398,45 @@ function errMsg(e){return (e&&e.message)?e.message:String(e);}
 
 var busyCount=0;
 function busy(on){busyCount+=on?1:-1;if(busyCount<0)busyCount=0;$('loading').style.display=busyCount>0?'flex':'none';}
-
-/* ---------- ระบบรับ-ส่งข้อมูลกับ GAS ผ่าน FETCH (สำหรับ Vercel) ---------- */
-function callGasApi(tok, fn, args) {
-  return fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ token: tok, fn: fn, args: args })
-  })
-  .then(function(res){ return res.json(); });
+// เรียก Backend ผ่าน Vercel API Proxy เพื่อไม่ให้ browser ติดต่อ Google Apps Script โดยตรง
+// URL ของ Google Apps Script จะถูกเก็บไว้ใน Environment Variable ฝั่ง Server เท่านั้น
+async function requestRpc(token, fn, args){
+  var response;
+  try{
+    response=await fetch('/api/rpc',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:token||null,fn:fn,args:Array.isArray(args)?args:[]})
+    });
+  }catch(e){
+    throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ: '+errMsg(e));
+  }
+  var x;
+  try{x=await response.json();}
+  catch(e){throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (ตรวจสอบการตั้งค่า GAS_WEB_APP_URL)');}
+  if(!response.ok && (!x || !x.ok)){
+    var he=new Error((x&&x.message)||('HTTP '+response.status));he.code=(x&&x.code)||'HTTP';throw he;
+  }
+  if(x&&x.ok)return x.data;
+  var er=new Error((x&&x.message)||'เกิดข้อผิดพลาด');er.code=(x&&x.code)||'ERR';
+  if(er.code==='AUTH'&&token&&token===AUTHST.token)forceLogout(er.message);
+  throw er;
 }
-
 function api(fn){
   var args=Array.prototype.slice.call(arguments,1);
   busy(true);
-  return new Promise(function(res,rej){
-    var tok=AUTHST.token;
-    callGasApi(tok, fn, args).then(function(x){
-      busy(false);
-      if(x&&x.ok){res(x.data);return;}
-      var msg=(x&&x.message)||'เกิดข้อผิดพลาด',code=(x&&x.code)||'ERR';
-      if(code==='AUTH'&&tok&&tok===AUTHST.token)forceLogout(msg);
-      var er=new Error(msg);er.code=code;rej(er);
-    }).catch(function(e){busy(false);rej(e);});
-  });
+  return requestRpc(AUTHST.token,fn,args).finally(function(){busy(false);});
 }
-
+// เรียกเซิร์ฟเวอร์แบบไม่บังหน้าจอ (แถบความคืบหน้าด้านบนเท่านั้น)
 var bgCount=0;
 function bgBar(on){bgCount+=on?1:-1;if(bgCount<0)bgCount=0;var t=$('topbar');if(t)t.className=bgCount>0?'on':'';}
 function rpcBg(bar,fn,args){
   if(bar)bgBar(true);
-  return new Promise(function(res,rej){
-    var tok=AUTHST.token,done=false;
-    var tm=setTimeout(function(){if(done)return;done=true;if(bar)bgBar(false);var er=new Error('เซิร์ฟเวอร์ตอบช้าเกินกำหนด (ยังไม่ยืนยันผล) — ข้อมูลที่กรอกยังอยู่ กดบันทึกซ้ำได้อย่างปลอดภัย');er.code='TIMEOUT';rej(er);},60000);
-    callGasApi(tok, fn, args).then(function(x){
-      if(done)return;done=true;clearTimeout(tm);if(bar)bgBar(false);
-      if(x&&x.ok){res(x.data);return;}
-      var msg=(x&&x.message)||'เกิดข้อผิดพลาด',code=(x&&x.code)||'ERR';
-      if(code==='AUTH'&&tok&&tok===AUTHST.token)forceLogout(msg);
-      var er=new Error(msg);er.code=code;rej(er);
-    }).catch(function(e){if(done)return;done=true;clearTimeout(tm);if(bar)bgBar(false);rej(e);});
+  var tok=AUTHST.token,tm;
+  var timeout=new Promise(function(_,rej){
+    tm=setTimeout(function(){var er=new Error('เซิร์ฟเวอร์ตอบช้าเกินกำหนด (ยังไม่ยืนยันผล) — ข้อมูลที่กรอกยังอยู่ กดบันทึกซ้ำได้อย่างปลอดภัย');er.code='TIMEOUT';rej(er);},60000);
   });
+  return Promise.race([requestRpc(tok,fn,args),timeout]).finally(function(){clearTimeout(tm);if(bar)bgBar(false);});
 }
 function apiBg(fn){return rpcBg(true,fn,Array.prototype.slice.call(arguments,1));}
 function apiQuiet(fn){return rpcBg(false,fn,Array.prototype.slice.call(arguments,1));}
@@ -470,11 +465,12 @@ function idleTick(){
 }
 function pingQuiet(){
   var tok=AUTHST.token;if(!tok)return;
-  try{callGasApi(tok, 'ping', []).then(function(x){
-    if(x&&!x.ok&&x.code==='AUTH'&&tok===AUTHST.token)forceLogout(x.message||'หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่');
-  }).catch(function(){});}catch(e){}
+  requestRpc(tok,'ping',[]).catch(function(e){
+    if(e&&e.code==='AUTH'&&tok===AUTHST.token)forceLogout(e.message||'หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่');
+  });
 }
 
+// ล้างข้อมูลทั้งหมดออกจากหน้าจอ (ข้อมูลนักเรียนต้องไม่ค้างหลังออกจากระบบ)
 function wipeUI(){
   stopIdleTimer();
   try{['nutri','routine','growth'].forEach(killChart);}catch(e){}
@@ -504,7 +500,7 @@ function forceLogout(msg){
 function doLogout(){
   if((anyDirty()||S.indivDirty||S.rosterDirty||anySaving())&&!confirm('มีข้อมูลที่ยังไม่ได้บันทึก (หรือกำลังบันทึกอยู่) ออกจากระบบและทิ้งข้อมูลนี้หรือไม่?'))return;
   var tok=AUTHST.token;AUTHST.token=null;
-  try{callGasApi(tok, 'logout', []).then(function(){}).catch(function(){});}catch(e){}
+  requestRpc(tok,'logout',[]).catch(function(){});
   wipeUI();showLogin('ออกจากระบบเรียบร้อยแล้ว',false);
 }
 async function doLogin(e){
@@ -563,7 +559,7 @@ async function startApp(){
   if(!UIBOUND){bindUI();UIBOUND=true;}
   buildPeriodSelectors();
   renderSettings();
-  if(b.period){S.pcache[pkey(S.period.year,S.period.month)]={d:b.period,t:Date.now()};applyPeriod(b.period);prefetchAdj();}
+  if(b.period){S.pcache[pkey(S.period.year,S.period.month)]={d:b.period,t:Date.now()};applyPeriod(b.period);prefetchAdj();}   // เดือนแรกมากับรอบเดียวกัน ไม่ต้องเรียกซ้ำ
   else await loadPeriod();
   populateIndivSelect();
   populateGrowthSelect();
@@ -615,6 +611,7 @@ function renderReport(){
   });
   if(!n)h+='<tr><td colspan="9" class="hint" style="padding:16px">ไม่พบข้อมูลตามเงื่อนไข</td></tr>';
   $('rp_tbl').innerHTML=h+'</tbody>';
+  // สรุปรายห้อง (ตามเงื่อนไขเดียวกัน)
   var by={};rows.forEach(function(r){var o=by[r.room]||(by[r.room]={n:0,low:0,ok:0,hi:0,mk:0,bk:0});o.n++;if(r.s==='vthin'||r.s==='thin')o.low++;else if(r.s==='ok')o.ok++;else if(r.s==='plump'||r.s==='over'||r.s==='obese')o.hi++;o.mk+=r.mk;o.bk+=r.bk;});
   var sh='<thead><tr><th>ห้อง</th><th>นักเรียน</th><th>ตามเกณฑ์</th><th>ต่ำกว่าเกณฑ์</th><th>เกินเกณฑ์</th><th>นมเฉลี่ย</th><th>แปรงฟันเฉลี่ย</th></tr></thead><tbody>';
   S.rooms.forEach(function(rm){var o=by[rm.name];if(!o)return;sh+='<tr><td>'+esc(roomShort(rm.name))+'</td><td>'+o.n+'</td><td>'+o.ok+'</td><td>'+o.low+'</td><td>'+o.hi+'</td><td>'+(o.mk/o.n).toFixed(1)+'</td><td>'+(o.bk/o.n).toFixed(1)+'</td></tr>';});
@@ -659,7 +656,7 @@ function genPin(){
 }
 function statusLabel(s){return s==='active'?'ใช้งานได้':(s==='locked'?'ถูกล็อก (PIN ผิดเกินกำหนด)':'ปิดใช้งาน');}
 async function loadUsers(){
-  if(UM.loaded)renderUsers();
+  if(UM.loaded)renderUsers();   // แสดงของเดิมทันที แล้วรีเฟรชเบื้องหลัง
   try{var d=await apiBg('listUsers');UM.users=d.users;UM.rooms=d.rooms;UM.loaded=true;renderUsers();}
   catch(e){toast('โหลดรายชื่อผู้ใช้ไม่สำเร็จ: '+errMsg(e),true);}
 }
@@ -814,6 +811,7 @@ function buildPeriodSelectors(){
   var opts='';for(var m2=1;m2<=12;m2++)opts+='<option value="'+m2+'">'+TH_MONTHS[m2-1]+'</option>';
   $('set_startMonth').innerHTML=opts;$('set_currentMonth').innerHTML=opts;
 }
+// เดือน/ปีการศึกษาตามวันที่จริง (เวลาไทย) เช่น ต.ค. 2569 → ปีการศึกษา 2569
 function todayPeriod(){
   var p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'numeric'}).formatToParts(new Date()),y=0,m=0;
   p.forEach(function(x){if(x.type==='year')y=+x.value;if(x.type==='month')m=+x.value;});
@@ -830,6 +828,7 @@ async function changePeriod(){
   S.period={year:+$('selYear').value,month:+$('selMonth').value};
   await loadPeriod();
 }
+/* ---- ข้อมูลรายเดือน: เก็บสำรองในหน้าเว็บ (สลับเดือนที่เคยเปิดแล้วเห็นทันที แล้วรีเฟรชเบื้องหลัง) ---- */
 function pkey(y,m){return y+'-'+m;}
 var PTYPES=['milk','brush','health','check'];
 function applyPeriod(d){
@@ -847,10 +846,10 @@ async function loadPeriod(opts){
   if(c){
     applyPeriod(c.d);
     if(Date.now()-c.t<30000){prefetchAdj();return;}
-    var d0;try{d0=await apiBg('getPeriod',y,m);}catch(e){return;}
+    var d0;try{d0=await apiBg('getPeriod',y,m);}catch(e){return;}   // รีเฟรชเบื้องหลัง ถ้าล้มเหลวก็ใช้ของเดิมต่อไป
     if(!S.pcache)return;
     S.pcache[k]={d:d0,t:Date.now()};
-    if(seq!==S.pseq||anyDirty()||anySaving())return;
+    if(seq!==S.pseq||anyDirty()||anySaving())return;   // ผู้ใช้เริ่มแก้ไขแล้ว ไม่เขียนทับสิ่งที่พิมพ์
     applyPeriod(d0);prefetchAdj();return;
   }
   document.body.classList.add('pload');
@@ -922,6 +921,7 @@ function toggleDay(type,d){
   });
   markDirty(type);renderLog(type);
 }
+/* ---- บันทึกแบบ "ยืนยันแล้วจึงขึ้นว่าสำเร็จ": ส่งเฉพาะสิ่งที่เปลี่ยน, เซิร์ฟเวอร์ผสานกับข้อมูลล่าสุด, ถ้าล้มเหลวข้อมูลที่พิมพ์ยังอยู่ครบ ---- */
 function saveBtn(type,on){var b=$('btnSave-'+type);if(!b)return;if(!b.getAttribute('data-lbl'))b.setAttribute('data-lbl',b.textContent);b.disabled=!!on;b.textContent=on?'กำลังบันทึก…':b.getAttribute('data-lbl');}
 function afterSave(type,y,m,ok){
   S.saving[type]=false;saveBtn(type,false);
@@ -936,7 +936,7 @@ async function saveLog(type){
     var cur=dayObj(S.data[type][st.id]),base=dayObj(S.base[type][st.id]),a=[],r=[];
     Object.keys(cur).forEach(function(d){if(!base[d])a.push(+d);});
     Object.keys(base).forEach(function(d){if(!cur[d])r.push(+d);});
-    ifa.length||r.length={a:a,r:r};sent[st.id]=(S.data[type][st.id]||[]).slice();n++;}
+    if(a.length||r.length){grid[st.id]={a:a,r:r};sent[st.id]=(S.data[type][st.id]||[]).slice();n++;}
   });
   if(!n){S.dirty[type]=false;$('btnSave-'+type).classList.remove('dirty');toast('ไม่มีการเปลี่ยนแปลงที่ต้องบันทึก');return;}
   var ids=S.students.map(function(x){return x.id;}),ok=false;
@@ -945,12 +945,12 @@ async function saveLog(type){
     var r=await apiBg('saveRoutine',y,m,type,grid,ids,'diff');
     if(r&&r.success&&r.merged){
       ok=true;
-      if(S.ver[type]===ver){
+      if(S.ver[type]===ver){   // ระหว่างรอไม่มีการแก้ไขเพิ่ม → แสดงผลรวมล่าสุดจากเซิร์ฟเวอร์
         var before=JSON.stringify(S.data[type]);
         ids.forEach(function(id){if(r.merged[id])S.data[type][id]=r.merged[id].slice();else delete S.data[type][id];});
         S.base[type]=cloneJ(S.data[type]);S.dirty[type]=false;
         if(JSON.stringify(S.data[type])!==before)renderLog(type);
-      }else{Object.keys(sent).forEach(function(id){S.base[type][id]=sent[id].slice();});}
+      }else{Object.keys(sent).forEach(function(id){S.base[type][id]=sent[id].slice();});}   // มีแก้ไขเพิ่มระหว่างรอ → เก็บไว้ให้บันทึกรอบถัดไป
       toast(r.message);renderDash();
     }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
   }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
@@ -958,6 +958,7 @@ async function saveLog(type){
 }
 
 /* ---------- ตรวจสุขภาพรายสัปดาห์ ---------- */
+// สตริง 20 ตัว: 16 ช่องรายสัปดาห์ (สัปดาห์*4+หัวข้อ) + 4 ช่องสรุป (g=ดี, x=ปรับปรุง, -=ว่าง/อัตโนมัติ)
 var CK_ITEMS=['เล็บ','ฟัน','ผม','ร่างกาย'];
 function ckArr(id){var t=S.data.check[id]||'';while(t.length<20)t+='-';return t.substring(0,20).split('');}
 function ckAuto(a,i){var n=0,g=0;for(var w=0;w<4;w++){var c=a[w*4+i];if(c!=='-'){n++;if(c==='g')g++;}}return n?(g/n>=0.75?'g':'x'):'-';}
@@ -1050,6 +1051,7 @@ function buildCheckPrint(){
 var NUTRI={vthin:'ผอม',thin:'ค่อนข้างผอม',ok:'สมส่วน',plump:'ท้วม',over:'เริ่มอ้วน',obese:'อ้วน'};
 var NUTRI_COLORS={vthin:'#1b4f72',thin:'#5dade2',ok:'#1a7f4b',plump:'#f4d03f',over:'#e67e22',obese:'#c0392b'};
 var CUT_KEYS=['m2','m15','p15','p2','p3'];
+// คืนค่า null (ยังไม่กรอก) | 'nogender' | 'na' (ไม่มีตารางเกณฑ์) | 'out' (ส่วนสูงนอกช่วงตาราง) | รหัสภาวะ
 function evalNutrition(st,w,h,critOverride){
   w=parseFloat(w);h=parseFloat(h);
   if(!(w>0&&h>0))return null;
@@ -1102,6 +1104,7 @@ function statusOf(id){
 }
 function monthLabel(it){return TH_MONTHS[it.m-1]+' '+it.y;}
 function curOrd(){var sm=S.settings.startMonth||5;return S.period.year*12+((S.period.month-sm+12)%12);}
+// ตรวจน้ำหนัก/ส่วนสูงของนักเรียนหนึ่งคน: bad = ห้ามบันทึก, warn = เตือน
 function checkVitals(id){
   var v=S.data.health[id]||{},e=S.ref[id]||{},r={hBad:'',wBad:'',hWarn:'',wWarn:''};
   var h=parseFloat(v.h),w=parseFloat(v.w),co=curOrd();
@@ -1252,10 +1255,10 @@ async function loadIndiv(){
   var st=S.students.filter(function(s){return s.id===id;})[0];
   $('indivNick').textContent=st?('ชื่อเล่น: '+(st.nickname||'-')):'';
   var c=S.icache[id];
-  fillForm(c?cloneJ(c):{});S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');
+  fillForm(c?cloneJ(c):{});S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');   // เคยเปิดแล้วแสดงทันที แล้วรีเฟรชเบื้องหลัง
   var d;try{d=await apiBg('getIndividual',id);}catch(e){if(!c)toast('โหลดประวัติไม่สำเร็จ: '+errMsg(e),true);return;}
   S.icache[id]=cloneJ(d);
-  if(seq!==S.indivSeq||S.indivDirty)return;
+  if(seq!==S.indivSeq||S.indivDirty)return; // ผู้ใช้เปลี่ยนคนไปแล้ว หรือเริ่มพิมพ์แล้ว ไม่เขียนทับ
   fillForm(d);S.indivDirty=false;$('btnSave-indiv').classList.remove('dirty');
 }
 async function saveIndiv(){
@@ -1267,7 +1270,7 @@ async function saveIndiv(){
     var r=await apiBg('saveIndividual',id,data);
     if(r&&r.success){
       S.icache[id]=cloneJ(data);
-      if(S.indivId===id&&JSON.stringify(collectForm())===snap){S.indivDirty=false;}
+      if(S.indivId===id&&JSON.stringify(collectForm())===snap){S.indivDirty=false;}   // ถ้าพิมพ์เพิ่มระหว่างรอ ยังถือว่ามีที่ยังไม่บันทึก
       toast(r.message);
     }else toast('บันทึกไม่สำเร็จ: '+((r&&r.message)||'ไม่ได้รับการยืนยันจากเซิร์ฟเวอร์')+' (ข้อมูลที่กรอกยังอยู่)',true);
   }catch(e){toast('บันทึกไม่สำเร็จ — ข้อมูลที่กรอกยังอยู่ กดบันทึกอีกครั้งได้: '+errMsg(e),true);}
@@ -1453,12 +1456,14 @@ async function saveRosterUI(){
     var r=await api('saveRoster',rows,S.room,S.revs[S.room]||'');
     if(r&&r.success){S.allStudents=r.students;if(r.revs)S.revs=r.revs;S.pcache={};setRoom(S.room);toast(r.message);renderRosterEditor();renderAll();populateIndivSelect();populateGrowthSelect();}
     else if(r&&r.conflict){
+      // มีผู้อื่นแก้รายชื่อห้องนี้ไปก่อน — ไม่บันทึกทับ และไม่ทิ้งสิ่งที่พิมพ์ไว้ เว้นแต่ผู้ใช้เลือกเอง
       if(confirm('มีผู้ใช้อื่นแก้ไข/ลบรายชื่อห้องนี้ไปก่อนหน้าคุณ จึงยังไม่ได้บันทึกอะไร\n\nกด ตกลง = โหลดรายชื่อล่าสุด (สิ่งที่คุณพิมพ์ในตารางจะถูกแทนที่)\nกด ยกเลิก = เก็บสิ่งที่พิมพ์ไว้ในตารางก่อน (ยังบันทึกไม่ได้จนกว่าจะโหลดรายชื่อล่าสุด)')){
         S.allStudents=r.students;S.revs=r.revs||S.revs;S.pcache={};setRoom(S.room);renderRosterEditor();renderAll();populateIndivSelect();populateGrowthSelect();toast('โหลดรายชื่อล่าสุดแล้ว');
       }
     }else toast((r&&r.message)||'บันทึกไม่สำเร็จ',true);
   }catch(e){toast('บันทึกไม่สำเร็จ: '+errMsg(e),true);}
 }
+/* ---------- ลบนักเรียน (ลบข้อมูลออกจาก Google Sheets จริง: ตรวจผลกระทบ → ยืนยัน → ลบ) ---------- */
 async function deleteStudentUI(id){
   if(S.rosterDirty){toast('มีการแก้ไขตารางรายชื่อที่ยังไม่ได้บันทึก — กด "บันทึกรายชื่อ" ก่อน แล้วจึงลบนักเรียน',true);return;}
   if(anyDirty()||anySaving()||S.indivDirty||S.indivSaving){toast('มีข้อมูลประจำวัน/ประวัติที่ยังไม่ได้บันทึก — บันทึกก่อน แล้วจึงลบนักเรียน',true);return;}
@@ -1478,7 +1483,7 @@ async function deleteStudentUI(id){
     }else toast((r&&r.message)||'ลบไม่สำเร็จ',true);
   }catch(e){toast('ลบไม่สำเร็จ: '+errMsg(e)+' (ตรวจสอบรายชื่อแล้วลองใหม่ได้)',true);}
 }
-
+/* ---------- ห้องเรียน ---------- */
 function roomRowHtml(r){
   r=r||{name:'',level:'ป.1',suffix:'',teacher:'',pos:''};
   var key=r.name||(r.level+(r.suffix?'/'+r.suffix:''));
@@ -1580,7 +1585,7 @@ function genderFromText(t){
 }
 function genderFromName(n){
   n=String(n||'').trim();
-  if(/^(เด็กชาย|ด\.ช\.?|ดญ\.?|นาย)/.test(n))return 'ชาย';
+  if(/^(เด็กชาย|ด\.ช\.?|ดช\.?|นาย)/.test(n))return 'ชาย';
   if(/^(เด็กหญิง|ด\.ญ\.?|ดญ\.?|นางสาว|น\.ส\.?|นส\.?|นาง)/.test(n))return 'หญิง';
   return '';
 }
@@ -1612,6 +1617,7 @@ function buildImportItems(rows){
       if(HMAP[k].some(function(x){return normH(x)===hdr[i];})&&col[k]===undefined){col[k]=i;break;}
     }
   });
+  // "ชื่อ" เดี่ยวๆ ที่ไม่มีนามสกุล = ชื่อเต็ม
   if(col.name===undefined&&col.first!==undefined&&col.last===undefined){col.name=col.first;delete col.first;}
   if(col.name===undefined&&col.first===undefined)return {error:'ไม่พบคอลัมน์ "ชื่อ-สกุล" (หรือ ชื่อ + นามสกุล) ในแถวแรก'};
   var get=function(r,k){return col[k]===undefined?'':r[col[k]];};
@@ -1620,8 +1626,9 @@ function buildImportItems(rows){
     var it={row:ix+2,warn:[],err:''};
     var name;
     if(col.name!==undefined)name=cellStr(get(r,'name'));
-    else name=[cellStr(get(r,'prefix')),cellStr(get(r,'first')),cellStr(get(r,'last'))].filter(Boolean).join('');
-    if(col.name===undefined){
+    else name=[cellStr(get(r,'prefix')),cellStr(get(r,'first')),cellStr(get(r,'last'))].filter(Boolean).join('')
+      ;
+    if(col.name===undefined){ // ใส่ช่องว่างระหว่างชื่อกับนามสกุล
       name=[cellStr(get(r,'prefix'))+cellStr(get(r,'first')),cellStr(get(r,'last'))].filter(Boolean).join(' ');
     }
     name=name.replace(/\s+/g,' ').trim();
@@ -1859,8 +1866,8 @@ function bindUI(){
   $('rosterTbl').addEventListener('click',function(e){
     var b=e.target.closest('[data-del]');if(!b)return;
     var tr=b.closest('tr'),oid=tr.getAttribute('data-oid');
-    if(oid){deleteStudentUI(oid);return;}
-    tr.remove();renumberRoster();S.rosterDirty=true;
+    if(oid){deleteStudentUI(oid);return;}   // นักเรียนที่บันทึกในระบบแล้ว → ลบจริงผ่านขั้นตอนตรวจผลกระทบ+ยืนยัน
+    tr.remove();renumberRoster();S.rosterDirty=true;   // แถวใหม่ที่ยังไม่เคยบันทึก ลบออกจากตารางได้เลย
   });
   $('rosterTbl').addEventListener('input',function(){S.rosterDirty=true;});
   $('rosterTbl').addEventListener('change',function(){S.rosterDirty=true;});
