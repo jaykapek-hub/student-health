@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Civil Daily Report</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; background: #f4f4f9; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, select, textarea { width: 100%; padding: 8px; margin: 6px 0 14px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }
+    button:hover { background: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+    th { background: #e9ecef; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📝 บันทึก Daily Report งาน Civil</h2>
+    <form id="reportForm">
+      <label>วันที่:</label>
+      <input type="date" id="date" required>
+
+      <label>สถานที่ / โซน:</label>
+      <input type="text" id="location" placeholder="เช่น โซนคลังสินค้า NMM-Q" required>
+
+      <label>ประเภทงาน:</label>
+      <select id="workType">
+        <option value="Earthwork">งานดิน (Earthwork)</option>
+        <option value="Concrete">งานคอนกรีต (Concrete)</option>
+        <option value="Formwork/Rebar">งานแบบหล่อและเหล็กเสริม (Formwork & Rebar)</option>
+      </select>
+
+      <label>รายละเอียดการดำเนินงาน:</label>
+      <textarea id="description" rows="3" placeholder="ระบุรายละเอียดงานวันนี้..." required></textarea>
+
+      <label>ผู้ตรวจสอบ / ผู้รายงาน:</label>
+      <input type="text" id="inspector" placeholder="ชื่อผู้รายงาน" required>
+
+      <button type="submit" id="submitBtn">บันทึกรายงาน</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>📊 ประวัติรายงานทั้งหมด</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่</th>
+          <th>โซน</th>
+          <th>ประเภท</th>
+          <th>รายละเอียด</th>
+          <th>ผู้รายงาน</th>
+        </tr>
+      <tbody id="reportTableBody">
+        <tr><td colspan="5" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // ⚠️ แทนที่ด้วย Web App URL จาก Google Apps Script ของคุณ
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzxrHoXsVuWBnmyZjQORgbw_SFYEn1xaNejV6hlEQ3FpUcoSjgjr3XUHOWxTZSX_Ls3/exec";
+
+    // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+    function loadReports() {
+      fetch(GAS_URL)
+        .then(res => res.json())
+        .then(result => {
+          const tbody = document.getElementById('reportTableBody');
+          tbody.innerHTML = '';
+          
+          if (result.status === 'success' && result.data.length > 0) {
+            result.data.reverse().forEach(row => {
+              tbody.innerHTML += `<tr>
+                <td>${row.date}</td>
+                <td>${row.location}</td>
+                <td>${row.workType}</td>
+                <td>${row.description}</td>
+                <td>${row.inspector}</td>
+              </tr>`;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">ยังไม่มีข้อมูลรายงาน</td></tr>`;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('reportTableBody').innerHTML = `<tr><td colspan="5" style="text-align: center; color:red;">โหลดข้อมูลไม่สำเร็จ</td></tr>`;
+        });
+    }
+
+    // ส่งข้อมูลเมื่อกดบันทึก
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.innerText = 'กำลังบันทึก...';
+      btn.disabled = true;
+
+      const payload = {
+        date: document.getElementById('date').value,
+        location: document.getElementById('location').value,
+        workType: document.getElementById('workType').value,
+        description: document.getElementById('description').value,
+        inspector: document.getElementById('inspector').value
+      };
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        alert(res.message);
+        document.getElementById('reportForm').reset();
+        loadReports();
+      })
+      .catch(err => {
+        alert('เกิดข้อผิดพลาดในการบันทึก');
+      })
+      .finally(() => {
+        btn.innerText = 'บันทึกรายงาน';
+        btn.disabled = false;
+      });
+    });
+
+    loadReports();
+  </script>
+</body>
+</html>
